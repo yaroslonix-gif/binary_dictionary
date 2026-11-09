@@ -21,9 +21,10 @@ int main() {
     return 0;
 }
 
+/////////////////////////////////////////////////////////// BinDirectory ///////////////////////////////////////////////////////////
 void RunBinDirectory(struct bin_tree* tree) {
     while(1) {
-        printf("Chose comand: [v]view or [f]find or [e]exit\n");
+        printf("Chose comand: [v]view or [f]find or [a]add or [e]exit\n");
         switch (WaitComand()){
         case VIEW_MOD:
             TreeDump(tree, "view", YES_VIEW);
@@ -31,6 +32,10 @@ void RunBinDirectory(struct bin_tree* tree) {
 
         case FIND_MOD:
             FindElementInTree(tree);
+            break;
+
+        case ADD_MOD:
+            AddObjInTree(tree);
             break;
 
         case EXIT_MOD:
@@ -50,13 +55,157 @@ int WaitComand() {
 
         SkipForEOS(stdin);
 
-        if (strlen(str) == 1 && (str[0] == VIEW_MOD || str[0] == FIND_MOD || str[0] == EXIT_MOD))
+        if (strlen(str) == 1 && (str[0] == VIEW_MOD || str[0] == FIND_MOD || str[0] == ADD_MOD || str[0] == EXIT_MOD))
             return str[0];
         
         printf("Wrong input, try again\n");
     }
 }
 
+int WaitYesOrNo() {
+    char str[10] = {};
+
+    for (;;) {
+        if (scanf("%9s", str) != 1) return 0;
+
+        SkipForEOS(stdin);
+
+        if (strlen(str) == 1 && (str[0] == 'y' || str[0] == 'n'))
+            return (str[0] == 'y');
+        
+        printf("Wrong input, try again\n");
+    }
+}
+
+void FindElementInTree(struct bin_tree* tree) {
+    if (tree == NULL) return;
+
+    _FindElement(tree->root);
+}
+
+void _FindElement(struct node* node) {
+    if (node == NULL) return;
+
+    printf("It is %s? (Answer: [y]yes or [n]no)\n", node->value);
+    int ans = WaitYesOrNo();
+
+    if (node->left != NULL && node->right != NULL) {
+        if (ans) {
+            _FindElement(node->right);
+            return;
+        } else {
+            _FindElement(node->left);
+            return;
+        }
+    }
+
+    if (node->left == NULL && node->right == NULL) {
+        if (ans) {
+            printf("I guess\n");
+            return;
+        } else {
+            printf("I don't know what is it\n");
+            struct node* ch_node = node;
+            struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
+            HARD_VERIFY(wrong_node != NULL, NULL_ERROR);
+            struct node* correct_node = (struct node*)calloc(1, sizeof(struct node));
+            HARD_VERIFY(correct_node != NULL, NULL_ERROR);
+
+            ch_node->left = wrong_node;
+            ch_node->right = correct_node;
+            wrong_node->parent = ch_node;
+            correct_node->parent = ch_node;
+            wrong_node->value = node->value;
+
+            printf("It is: ");
+            char* str_obj_name = read_line(stdin);
+            correct_node->value = str_obj_name;
+
+            printf("What is the difference between %s and %s:\n", str_obj_name, wrong_node->value);
+            printf("%s is: ", str_obj_name);
+            char* str_obj_ch = read_line(stdin);
+            ch_node->value = str_obj_ch;
+
+            return;
+        }
+    }
+    
+    if (ans == 1 && node->right == NULL) {
+        printf("I don't know what is it\n");
+        printf("It is: ");
+
+        char* str = read_line(stdin);
+        node->right = (struct node*)calloc(1, sizeof(struct node));
+        HARD_VERIFY(node->right != NULL, NULL_ERROR);
+        node->right->value = str;
+        node->right->parent = node;
+
+        return;
+    }
+
+    if (ans == 0 && node->left == NULL) {
+        printf("I don't know what is it\n");
+        printf("It is: ");
+
+        char* str = read_line(stdin);
+        node->left = (struct node*)calloc(1, sizeof(struct node));
+        HARD_VERIFY(node->left != NULL, NULL_ERROR);
+        node->left->value = str;
+        node->left->parent = node;
+
+        return;
+    }
+}
+
+void AddObjInTree(struct bin_tree* tree) {
+    printf("What object do you want to add? (Enter it's name)\n");
+    printf("The new object is: ");
+    char* new_obj_name = read_line(stdin);
+    printf("With witch object do you want to compare %s? (Enter it's name)\n", new_obj_name);
+    printf("The object is: ");
+    char* old_obj_name = read_line(stdin);
+    struct node* old_obj = _FindListByName(tree->root, old_obj_name);
+    if (old_obj == NULL) {
+        printf("There is no object named %s in database\n", old_obj_name);
+        return;
+    }
+
+    printf("What is the difference between %s and %s:\n", new_obj_name, old_obj_name);
+    printf("%s is: ", new_obj_name);
+    char* str_obj_ch = read_line(stdin);
+    
+    struct node* ch_node = old_obj;
+    struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
+    HARD_VERIFY(wrong_node != NULL, NULL_ERROR);
+    struct node* correct_node = (struct node*)calloc(1, sizeof(struct node));
+    HARD_VERIFY(correct_node != NULL, NULL_ERROR);
+
+    ch_node->left = wrong_node;
+    ch_node->right = correct_node;
+    wrong_node->parent = ch_node;
+    correct_node->parent = ch_node;
+    wrong_node->value = old_obj_name;
+    correct_node->value = new_obj_name;
+    ch_node->value = str_obj_ch;
+}
+
+struct node* _FindListByName(struct node* node, const node_elem_t obj_name) {
+    if (node == NULL) return NULL;
+
+    if (node->left == NULL && node->left == NULL) {
+        if (strcmp(node->value, obj_name) == 0) {
+            return node;
+        }
+        return NULL;
+    }
+    struct node* obj = _FindListByName(node->left, obj_name);
+    if (obj != NULL) return obj;
+
+    obj = _FindListByName(node->right, obj_name);
+    return obj;
+}
+
+/////////////////////////////////////////////////////////// TREE ///////////////////////////////////////////////////////////
 void InitTree(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
@@ -112,101 +261,6 @@ void AddElement(struct bin_tree* tree, node_elem_t val) {
     return;
 }
 
-int WaitYesOrNo() {
-    char str[10] = {};
-
-    for (;;) {
-        if (scanf("%9s", str) != 1) return 0;
-
-        SkipForEOS(stdin);
-
-        if (strlen(str) == 1 && (str[0] == 'y' || str[0] == 'n'))
-            return (str[0] == 'y');
-        
-        printf("Wrong input, try again\n");
-    }
-}
-
-void FindElementInTree(struct bin_tree* tree) {
-    if (tree == NULL) return;
-
-    _FindElement(tree->root);
-}
-
-void _FindElement(struct node* node) {
-    if (node == NULL) return;
-
-    printf("It is %s? (Answer: [y]yes or [n]no)\n", node->value);
-    int ans = WaitYesOrNo();
-
-    if (node->left != NULL && node->right != NULL) {
-        if (ans) {
-            _FindElement(node->right);
-            return;
-        } else {
-            _FindElement(node->left);
-            return;
-        }
-    }
-
-    if (node->left == NULL && node->right == NULL) {
-        if (ans) {
-            printf("I guess\n");
-            return;
-        } else {
-            printf("I don't know what is it\n");
-            struct node* ch_node = node;
-            struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
-            HARD_VERIFY(wrong_node != NULL, NULL_ERROR);
-            struct node* correct_node = (struct node*)calloc(1, sizeof(struct node));
-            HARD_VERIFY(correct_node != NULL, NULL_ERROR);
-
-            ch_node->left = wrong_node;
-            ch_node->right = correct_node;
-            wrong_node->parent = node;
-            correct_node->parent = node;
-            wrong_node->value = node->value;
-
-            printf("It is: ");
-            char* str_obj_name = read_line(stdin);
-            correct_node->value = str_obj_name;
-
-            printf("What is the difference between %s and %s:\n", str_obj_name, wrong_node->value);
-            printf("%s is: ", str_obj_name);
-            char* str_obj_ch = read_line(stdin);
-            ch_node->value = str_obj_ch;
-
-            return;
-        }
-    }
-    
-    if (ans == 1 && node->right == NULL) {
-        printf("I don't know what is it\n");
-        printf("It is: ");
-
-        char* str = read_line(stdin);
-        node->right = (struct node*)calloc(1, sizeof(struct node));
-        HARD_VERIFY(node->right != NULL, NULL_ERROR);
-        node->right->value = str;
-        node->right->parent = node;
-
-        return;
-    }
-
-    if (ans == 0 && node->left == NULL) {
-        printf("I don't know what is it\n");
-        printf("It is: ");
-
-        char* str = read_line(stdin);
-        node->left = (struct node*)calloc(1, sizeof(struct node));
-        HARD_VERIFY(node->left != NULL, NULL_ERROR);
-        node->left->value = str;
-        node->left->parent = node;
-
-        return;
-    }
-}
-
 void DestroyTree(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
@@ -228,6 +282,7 @@ void _DestroySubTree(struct node* node) {
     return;
 }
 
+/////////////////////////////////////////////////////////// Print ///////////////////////////////////////////////////////////
 void PrintTreePreorder(const struct bin_tree* tree, FILE* fileout) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
     HARD_ASSERT(fileout != NULL, NULL_ERROR);
@@ -393,6 +448,7 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
     fclose(source);
 }
 
+/////////////////////////////////////////////////////////// Dump ///////////////////////////////////////////////////////////
 void TreeDump(struct bin_tree* tree, const char* message, int view_flag) {
     HARD_ASSERT(message != NULL, NULL_ERROR);
 

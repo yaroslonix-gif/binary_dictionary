@@ -1,1 +1,1 @@
-(<grey>(<unknomwn object>()())(<big>(<mouse>()())(<elephant>()())))
+(<grey>(<unknown object>()())(<big>(<mouse>()())(<elephant>()())))

@@ -13,6 +13,7 @@ typedef char* node_elem_t;
 
 #define VIEW_MOD 'v'
 #define FIND_MOD 'f'
+#define ADD_MOD  'a'
 #define EXIT_MOD 'e'
 
 const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[3], __TIME__[4], __TIME__[6], __TIME__[7], '\0'};
@@ -77,3 +78,7 @@ void _FindElement(struct node* node);
 int WaitComand();
 
 void RunBinDirectory(struct bin_tree* tree);
+
+void AddObjInTree(struct bin_tree* tree);
+
+struct node* _FindListByName(struct node* node, const node_elem_t obj_name);
