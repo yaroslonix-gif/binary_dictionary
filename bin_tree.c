@@ -14,7 +14,7 @@ int main() {
 
     RunBinDirectory(&tree);
 
-    PrintTreeInorder(&tree, stdout);
+    PrintTreePreorder(&tree, stdout);
     SaveTree(&tree);
     TreeDump(&tree, "dump", NO_VIEW);
     STOP_LOGG;
@@ -23,22 +23,29 @@ int main() {
 
 /////////////////////////////////////////////////////////// BinDirectory ///////////////////////////////////////////////////////////
 void RunBinDirectory(struct bin_tree* tree) {
+    HARD_ASSERT(tree != NULL, NULL_ERROR);
+
     while(1) {
-        printf("Chose comand: [v]view or [f]find or [a]add or [e]exit\n");
-        switch (WaitComand()){
-        case VIEW_MOD:
+        printf("Chose command: [v]view or [f]find or [a]add or [c]compare or [e]exit\n");
+
+        switch (WaitCommand()){
+        case VIEW_MODE:
             TreeDump(tree, "view", YES_VIEW);
             break;
 
-        case FIND_MOD:
+        case FIND_MODE:
             FindElementInTree(tree);
             break;
 
-        case ADD_MOD:
+        case ADD_MODE:
             AddObjInTree(tree);
             break;
+        
+        case COMPARE_MODE:
+            CompareObjects(tree);
+            break;
 
-        case EXIT_MOD:
+        case EXIT_MODE:
             return;
 
         default:
@@ -47,7 +54,7 @@ void RunBinDirectory(struct bin_tree* tree) {
     }
 }
 
-int WaitComand() {
+int WaitCommand() {
     char str[10] = {};
 
     for (;;) {
@@ -55,7 +62,7 @@ int WaitComand() {
 
         SkipForEOS(stdin);
 
-        if (strlen(str) == 1 && (str[0] == VIEW_MOD || str[0] == FIND_MOD || str[0] == ADD_MOD || str[0] == EXIT_MOD))
+        if (strlen(str) == 1 && (str[0] == VIEW_MODE || str[0] == FIND_MODE || str[0] == ADD_MODE || str[0] == COMPARE_MODE || str[0] == EXIT_MODE))
             return str[0];
         
         printf("Wrong input, try again\n");
@@ -78,7 +85,7 @@ int WaitYesOrNo() {
 }
 
 void FindElementInTree(struct bin_tree* tree) {
-    if (tree == NULL) return;
+    TreeDump(tree, "FindElementInTree", NO_VIEW);
 
     _FindElement(tree->root);
 }
@@ -105,6 +112,7 @@ void _FindElement(struct node* node) {
             return;
         } else {
             printf("I don't know what is it\n");
+
             struct node* ch_node = node;
             struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
             HARD_VERIFY(wrong_node != NULL, NULL_ERROR);
@@ -158,12 +166,16 @@ void _FindElement(struct node* node) {
 }
 
 void AddObjInTree(struct bin_tree* tree) {
+    TreeDump(tree, "Before AddObjInTree", NO_VIEW);
+
     printf("What object do you want to add? (Enter it's name)\n");
     printf("The new object is: ");
     char* new_obj_name = read_line(stdin);
+
     printf("With witch object do you want to compare %s? (Enter it's name)\n", new_obj_name);
     printf("The object is: ");
     char* old_obj_name = read_line(stdin);
+
     struct node* old_obj = _FindListByName(tree->root, old_obj_name);
     if (old_obj == NULL) {
         printf("There is no object named %s in database\n", old_obj_name);
@@ -187,6 +199,8 @@ void AddObjInTree(struct bin_tree* tree) {
     wrong_node->value = old_obj_name;
     correct_node->value = new_obj_name;
     ch_node->value = str_obj_ch;
+
+    TreeDump(tree, "After AddObjInTree", NO_VIEW);
 }
 
 struct node* _FindListByName(struct node* node, const node_elem_t obj_name) {
@@ -198,6 +212,7 @@ struct node* _FindListByName(struct node* node, const node_elem_t obj_name) {
         }
         return NULL;
     }
+
     struct node* obj = _FindListByName(node->left, obj_name);
     if (obj != NULL) return obj;
 
@@ -205,67 +220,131 @@ struct node* _FindListByName(struct node* node, const node_elem_t obj_name) {
     return obj;
 }
 
+uint64_t GetNodeDepth(const struct node* node) {
+    HARD_ASSERT(node != NULL, NULL_ERROR);
+    uint64_t depth = 0;
+
+    while (node->parent != NULL) {
+        depth += 1;
+        node = node->parent;
+    }
+
+    return depth;
+}
+
+void PrintNodeCharacteristicReverse(const struct node* node) {
+    HARD_ASSERT(node != NULL, NULL_ERROR);
+    printf("%s is:", node->value);
+
+    while (node->parent != NULL) {
+        if (node->parent->left == node)
+            printf(" not");
+        
+        node = node->parent;
+        printf(" %s,", node->value);
+    }
+
+    printf("\b \n");
+}
+
+void PrintNodeCharacteristic(const struct node* node) {
+    HARD_ASSERT(node != NULL, NULL_ERROR);
+
+    printf("%s is:", node->value);
+    _PrintNodeCharacteristic(node);
+    printf("\b \n");
+}
+
+void _PrintNodeCharacteristic(const struct node* node) {
+    HARD_ASSERT(node != NULL, NULL_ERROR);
+    if(node->parent == NULL) return;
+    
+    _PrintNodeCharacteristic(node->parent);
+
+    if (node->parent->left == node)
+        printf(" not");
+    
+    printf(" %s,", node->parent->value);
+    return;
+}
+
+void CompareObjects(const struct bin_tree* tree) {
+    TreeDump(tree, "CompareObjects", NO_VIEW);
+
+    printf("What objects do you want to compare? (Enter first name of object)\n");
+    printf("The first object is: ");
+    char* obj_1_name = read_line(stdin);
+
+    printf("What second do you want to compare? (Enter second name of object)\n");
+    printf("The second object is: ");
+    char* obj_2_name = read_line(stdin);
+
+    struct node* obj_1 = _FindListByName(tree->root, obj_1_name);
+    struct node* obj_2 = _FindListByName(tree->root, obj_2_name);
+
+    if (obj_1 == NULL) {
+        printf("There is no object named %s in database\n", obj_1_name);
+        return;
+    }
+    if (obj_2 == NULL) {
+        printf("There is no object named %s in database\n", obj_2_name);
+        return;
+    }
+
+    _CompareObjects(obj_1, obj_2);
+}
+
+void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2) {
+    HARD_ASSERT(p_obj_1 != NULL, NULL_ERROR);
+    HARD_ASSERT(p_obj_2 != NULL, NULL_ERROR);
+
+    const struct node* obj_1 = p_obj_1;
+    const struct node* obj_2 = p_obj_2;
+    PrintNodeCharacteristic(obj_1);
+    PrintNodeCharacteristic(obj_2);
+
+    uint64_t depth_obj_1 = GetNodeDepth(obj_1);
+    uint64_t depth_obj_2 = GetNodeDepth(obj_2);
+    uint64_t min_depth = MIN(depth_obj_1, depth_obj_2);
+
+    if (depth_obj_1 < depth_obj_2) {
+        for (uint64_t i = depth_obj_1; i < depth_obj_2; i++)
+            obj_2 = obj_2->parent;
+        
+    } else if (depth_obj_1 > depth_obj_2) {
+        for (uint64_t i = depth_obj_2; i < depth_obj_1; i++)
+            obj_1 = obj_1->parent;
+    }
+
+    uint64_t not_sim_depth = 0;
+    while (obj_1 != obj_2) {
+        obj_1 = obj_1->parent;
+        obj_2 = obj_2->parent;
+        not_sim_depth++;
+    }
+
+    if (obj_1 != NULL) {
+        printf("The %s and %s are", p_obj_1->value, p_obj_2->value);
+        _PrintNodeCharacteristic(obj_1);
+        printf("\b \n");
+
+        double same = 100.0 * (double)(min_depth - not_sim_depth) / (double)min_depth;
+        printf("The %s is %s on %lg percents\n", p_obj_1->value, p_obj_2->value, same);
+    }
+}
+
 /////////////////////////////////////////////////////////// TREE ///////////////////////////////////////////////////////////
 void InitTree(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
-    tree->size = 0;
     tree->root = NULL;
-}
-
-void AddElement(struct bin_tree* tree, node_elem_t val) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-
-    if (tree->size == 0) {
-        tree->root = (struct node*)calloc(1, sizeof(struct node));
-        HARD_VERIFY(tree->root != NULL, NULL_ERROR);
-
-        tree->root->value = val;
-        tree->root->left = NULL;
-        tree->root->right = NULL;
-        tree->root->parent = NULL;
-        tree->size++;
-
-        return;
-    }
-
-    struct node* now = tree->root;
-    while (1) {
-        if (val >= now->value) {
-            if (now->right == NULL) {
-                now->right = (struct node*)calloc(1, sizeof(struct node));
-                HARD_VERIFY(now->right != NULL, NULL_ERROR);
-
-                now->right->parent = now;
-                now = now->right;
-                break;
-            }
-            now = now->right;
-        } else {
-            if (now->left == NULL) {
-                now->left = (struct node*)calloc(1, sizeof(struct node));
-                HARD_VERIFY(now->left != NULL, NULL_ERROR);
-
-                now->left->parent = now;
-                now = now->left;
-                break;
-            }
-            now = now->left;
-        }
-    }
-
-    now->value = val;
-    now->left = NULL;
-    now->right = NULL;
-    tree->size++;
-    return;
 }
 
 void DestroyTree(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
     _DestroySubTree(tree->root);
-    tree->size = 0;
+
     tree->root = NULL;
 }
 
@@ -278,6 +357,7 @@ void _DestroySubTree(struct node* node) {
     if (node->right != NULL)
         _DestroySubTree(node->right);
     
+    free(node->value);
     free(node);
     return;
 }
@@ -309,6 +389,7 @@ void PrintTreePostorder(const struct bin_tree* tree, FILE* fileout) {
 
 void _PrintSubTreePreorder(const struct node* node, FILE* fileout) {
     HARD_ASSERT(fileout != NULL, NULL_ERROR);
+
     if (node == NULL) {
         fprintf(fileout, "()");
         return;
@@ -325,6 +406,7 @@ void _PrintSubTreePreorder(const struct node* node, FILE* fileout) {
 
 void _PrintSubTreeInorder(const struct node* node, FILE* fileout) {
     HARD_ASSERT(fileout != NULL, NULL_ERROR);
+
     if (node == NULL) {
         fprintf(fileout, "()");
         return;
@@ -341,6 +423,7 @@ void _PrintSubTreeInorder(const struct node* node, FILE* fileout) {
 
 void _PrintSubTreePostorder(const struct node* node, FILE* fileout) {
     HARD_ASSERT(fileout != NULL, NULL_ERROR);
+
     if (node == NULL) {
         fprintf(fileout, "()");
         return;
@@ -356,7 +439,7 @@ void _PrintSubTreePostorder(const struct node* node, FILE* fileout) {
 }
 
 void SaveTree(const struct bin_tree* tree) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
+    TreeDump(tree, "save", NO_VIEW);
 
     FILE* fileout = fopen(TREESAVEFILE, "w");
     HARD_VERIFY(fileout != NULL, CANT_OPEN_FILE);
@@ -376,7 +459,6 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
     char* ptr_save = read_line(source);
     char* save = ptr_save;
     struct node* now = NULL;
-    int count = 0;
     char* end = ptr_save + strlen(ptr_save);
     int left_empty = 0;
 
@@ -391,7 +473,8 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
                 save += 2;
                 continue;
             }
-            if (tree->size == 0) {
+
+            if (tree->root == NULL) {
                 tree->root = (struct node*)calloc(1, sizeof(struct node));
                 HARD_VERIFY(tree->root != NULL, NULL_ERROR);
                 now = tree->root;
@@ -407,24 +490,28 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
                 } else if (now->right == NULL) {
                     now->right = new_node;
                 } else {
+                    LOGG("WRONG save format\n");
                     abort();
                 }
+
                 new_node->parent = now;
                 left_empty = 0;
                 now = new_node;
             }
-            tree->size++;
+
             save += 1;
             continue;
         }
 
         if (save[0] == ')') {
             HARD_VERIFY(now != NULL, NULL_ERROR);
+
             if (now->parent != NULL && now->parent->left == now) {
                 left_empty = 1;
             } else {
                 left_empty = 0;
             }
+            
             now = now->parent;
             save += 1;
             continue;
@@ -449,7 +536,7 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
 }
 
 /////////////////////////////////////////////////////////// Dump ///////////////////////////////////////////////////////////
-void TreeDump(struct bin_tree* tree, const char* message, int view_flag) {
+void TreeDump(const struct bin_tree* tree, const char* message, const int view_flag) {
     HARD_ASSERT(message != NULL, NULL_ERROR);
 
     LOGG(message);
@@ -478,7 +565,7 @@ void TreeDump(struct bin_tree* tree, const char* message, int view_flag) {
     }
 }
 
-int TreeGraphicDump(struct bin_tree* tree, const char* file_name) {
+int TreeGraphicDump(const struct bin_tree* tree, const char* file_name) {
     HARD_ASSERT(file_name != NULL, NULL_ERROR);
 
     if (tree == NULL) {
@@ -486,15 +573,9 @@ int TreeGraphicDump(struct bin_tree* tree, const char* file_name) {
         return HAVE_ERROR;
     }
 
-    if (tree->root == NULL && tree->size != 0) {
-        LOGG("NULL_ROOT: ROOT is NULL\n");
-        return HAVE_ERROR;
-    }
-
     int have_err = 0;
 
     LOGG("<table border=\"1\">\n");
-    LOGG("<tr><td>size</td><td>%llu</td></tr>\n", tree->size);
     LOGG("<tr><td>root</td><td>%p</td></tr>\n", tree->root);
     LOGG("</table>\n");
 
@@ -508,7 +589,7 @@ int TreeGraphicDump(struct bin_tree* tree, const char* file_name) {
 
     fprintf(dump_out, "digraph {\n");
     fprintf(dump_out, "  rankdir = TB;\n  node[shape = \"Mrecord\", style = filled, fontsize = 12];\n");
-    fprintf(dump_out, "  graph[splines = ortho, nodesep = 1];\n");
+    fprintf(dump_out, "  graph[nodesep = 1];\n"); //splines = ortho, 
     fprintf(dump_out, "  edge[radius = 5];\n");
     
     _TreeBasePart(tree, dump_out, &have_err);
@@ -532,11 +613,13 @@ void SetDumpNode(FILE* dump_out, const struct node* node, const char* color, con
     HARD_ASSERT(color != NULL, NULL_ERROR);
     HARD_ASSERT(fillcolor != NULL, NULL_ERROR);
 
-    fprintf(dump_out, "  NODE%p[color = \"%s\", fillcolor = \"%s\", label=\"{ node = 0x%p | left = 0x%p | right = 0x%p | parent = 0x%p | val = " PRNODE_FOR_GR " }\"];\n", 
-            node, color, fillcolor, node, node->left, node->right, node->parent, node->value);
+    //fprintf(dump_out, "  NODE%p[color = \"%s\", fillcolor = \"%s\", label=\"{ node = 0x%p | left = 0x%p | right = 0x%p | parent = 0x%p | val = " PRNODE_FOR_GR " }\"];\n", 
+    //        node, color, fillcolor, node, node->left, node->right, node->parent, node->value);
+    fprintf(dump_out, "  NODE%p[color = \"%s\", fillcolor = \"%s\", label=\"{ " PRNODE_FOR_GR " }\"];\n", 
+            node, color, fillcolor, node->value);
 }
 
-void _TreeBasePart(struct bin_tree* tree, FILE* dump_out, int* have_err) {
+void _TreeBasePart(const struct bin_tree* tree, FILE* dump_out, int* have_err) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
     HARD_ASSERT(dump_out != NULL, NULL_ERROR);
     HARD_ASSERT(have_err != NULL, NULL_ERROR);
@@ -554,14 +637,16 @@ void _DumpSubTree(const struct node* node, FILE* dump_out) {
 
     SetDumpNode(dump_out, node, "#008000", "#C0FFC0");
     if (node->left != NULL) {
-        fprintf(dump_out, "NODE%p->NODE%p[color = \"#0000b0\", weight = 5, dir = forward];\n", node, node->left);
+        fprintf(dump_out, "NODE%p->NODE%p[color = \"#0000b0\", weight = 5, dir = forward, label=\"no\", fontcolor = \"#0000b0\"];\n", node, node->left);
         _DumpSubTree(node->left, dump_out);
     }
+
     if (node->right != NULL) {
-        fprintf(dump_out, "NODE%p->NODE%p[color = \"#ff8000\", weight = 5, dir = forward];\n", node, node->right);
+        fprintf(dump_out, "NODE%p->NODE%p[color = \"#ff8000\", weight = 5, dir = forward, label=\"yes\", fontcolor = \"#ff8000\"];\n", node, node->right);
         _DumpSubTree(node->right, dump_out);
     }
-    if (node->parent != NULL) {
-        fprintf(dump_out, "NODE%p->NODE%p[style=dashed, color = \"#000000\", weight = 0, dir = forward];\n", node, node->parent);
-    }
+
+    // if (node->parent != NULL) {
+    //     fprintf(dump_out, "NODE%p->NODE%p[style=dashed, color = \"#000000\", weight = 0, dir = forward];\n", node, node->parent);
+    // }
 }

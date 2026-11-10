@@ -11,10 +11,11 @@ typedef char* node_elem_t;
 #define NO_VIEW 0
 #define YES_VIEW 1
 
-#define VIEW_MOD 'v'
-#define FIND_MOD 'f'
-#define ADD_MOD  'a'
-#define EXIT_MOD 'e'
+#define VIEW_MODE 'v'
+#define FIND_MODE 'f'
+#define ADD_MODE  'a'
+#define COMPARE_MODE  'c'
+#define EXIT_MODE 'e'
 
 const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[3], __TIME__[4], __TIME__[6], __TIME__[7], '\0'};
 
@@ -26,14 +27,11 @@ struct node {
 };
 
 struct bin_tree {
-    uint64_t size;
     struct node* root;
 };
 
 /////////////////////////////////////////////////////////// ПРОТОТИПЫ ФУНКЦИЙ ///////////////////////////////////////////////////////////
 void InitTree(struct bin_tree* tree);
-
-void AddElement(struct bin_tree* tree, node_elem_t val);
 
 void DestroyTree(struct bin_tree* tree);
 
@@ -59,13 +57,13 @@ void DownloadTree(struct bin_tree* tree, const char* filename);
 
 
 
-void TreeDump(struct bin_tree* tree, const char* message, int view_flag);
+void TreeDump(const struct bin_tree* tree, const char* message, const int view_flag);
 
-int TreeGraphicDump(struct bin_tree* tree, const char* file_name);
+int TreeGraphicDump(const struct bin_tree* tree, const char* file_name);
 
 void SetDumpNode(FILE* dump_out, const struct node* node, const char* color, const char* fillcolor);
 
-void _TreeBasePart(struct bin_tree* tree, FILE* dump_out, int* have_err);
+void _TreeBasePart(const struct bin_tree* tree, FILE* dump_out, int* have_err);
 
 void _DumpSubTree(const struct node* node, FILE* dump_out);
 
@@ -75,10 +73,23 @@ void FindElementInTree(struct bin_tree* tree);
 
 void _FindElement(struct node* node);
 
-int WaitComand();
+int WaitCommand();
 
 void RunBinDirectory(struct bin_tree* tree);
 
 void AddObjInTree(struct bin_tree* tree);
 
 struct node* _FindListByName(struct node* node, const node_elem_t obj_name);
+
+uint64_t GetNodeDepth(const struct node* node);
+
+void PrintNodeCharacteristicReverse(const struct node* node);
+
+void CompareObjects(const struct bin_tree* tree);
+
+void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2);
+
+
+void PrintNodeCharacteristic(const struct node* node);
+
+void _PrintNodeCharacteristic(const struct node* node);
