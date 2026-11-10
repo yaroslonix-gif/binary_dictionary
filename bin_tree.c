@@ -4,13 +4,15 @@ int main() {
     START_LOGG;
     LOGG("<pre>\n");
     LOGG("<head><style>table {border-collapse: collapse;background-color: #e6f2ff;font-family: Arial, sans-serif;} th, td {border: 1px solid #b3d7ff;padding: 12px; text-align: center;}th {background-color: #cbdff7; font-weight: bold;}</style></head>\n");
-    HARD_VERIFY(_mkdir(DIR_NAME) != -1, CANT_MAKE_DIR);
+    if (CreateDir(DIR_NAME) == -1) {
+        abort();
+    }
 
     struct bin_tree tree = {};
     InitTree(&tree);
     DownloadTree(&tree, "treesave.txt");
     TreeDump(&tree, "dump", NO_VIEW);
-    PrintTreeInorder(&tree, stdout);
+    PrintTreePreorder(&tree, stdout);
 
     RunBinDirectory(&tree);
 
@@ -649,4 +651,16 @@ void _DumpSubTree(const struct node* node, FILE* dump_out) {
     // if (node->parent != NULL) {
     //     fprintf(dump_out, "NODE%p->NODE%p[style=dashed, color = \"#000000\", weight = 0, dir = forward];\n", node, node->parent);
     // }
+}
+
+
+int CreateDir(const char* dir_name) {
+    if (_mkdir(dir_name) == 0)
+        return 0;
+    
+    if (errno == EEXIST)
+        return 1;
+
+    LOGG("ERROR of make dir\n");
+    return -1;
 }

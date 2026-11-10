@@ -93,3 +93,5 @@ void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2);
 void PrintNodeCharacteristic(const struct node* node);
 
 void _PrintNodeCharacteristic(const struct node* node);
+
+int CreateDir(const char* dir_name);
