@@ -53,7 +53,9 @@ struct node {
 - За загрузку дерева в программу DownloadTree(&tree, SAVE_FILENAME);
 
 Пример:
-(<grey>(<unknown object>()())(<big>(<mouse>()())(<elephant>()())))
+(\<grey\>(\<cat\>(\<unknown object\>()())(\<1,5\>()()))(\<big\>(<mouse>()())(\<elephant\>()())))
+
+<img width="685" height="397" alt="dump12_11_2026_13_32_20_686812" src="https://github.com/user-attachments/assets/06c4c13f-c672-4448-a19c-fbac9c4fe7bd" />
 
 
 ## Логирование и дамп
