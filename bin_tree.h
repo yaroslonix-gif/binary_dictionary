@@ -16,6 +16,8 @@ typedef char* node_elem_t;
 #define ADD_MODE  'a'
 #define COMPARE_MODE  'c'
 #define EXIT_MODE 'e'
+#define SAVE_FILENAME "treesave.txt"
+#define GRAPHVIZ_DOT_PATH "\"C:\\Program Files\\Graphviz\\bin\\dot.exe\""
 
 const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[3], __TIME__[4], __TIME__[6], __TIME__[7], '\0'};
 

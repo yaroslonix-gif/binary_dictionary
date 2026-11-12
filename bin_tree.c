@@ -10,7 +10,7 @@ int main() {
 
     struct bin_tree tree = {};
     InitTree(&tree);
-    DownloadTree(&tree, "treesave.txt");
+    DownloadTree(&tree, SAVE_FILENAME);
     TreeDump(&tree, "dump", NO_VIEW);
     PrintTreePreorder(&tree, stdout);
 
@@ -19,7 +19,9 @@ int main() {
     PrintTreePreorder(&tree, stdout);
     SaveTree(&tree);
     TreeDump(&tree, "dump", NO_VIEW);
+
     STOP_LOGG;
+    DestroyTree(&tree);
     return 0;
 }
 
@@ -165,6 +167,9 @@ void _FindElement(struct node* node) {
 
         return;
     }
+
+    LOGG("wrong tree\n");
+    abort();
 }
 
 void AddObjInTree(struct bin_tree* tree) {
@@ -194,6 +199,7 @@ void AddObjInTree(struct bin_tree* tree) {
     struct node* correct_node = (struct node*)calloc(1, sizeof(struct node));
     HARD_VERIFY(correct_node != NULL, NULL_ERROR);
 
+    free(old_obj->value);
     ch_node->left = wrong_node;
     ch_node->right = correct_node;
     wrong_node->parent = ch_node;
@@ -208,7 +214,7 @@ void AddObjInTree(struct bin_tree* tree) {
 struct node* _FindListByName(struct node* node, const node_elem_t obj_name) {
     if (node == NULL) return NULL;
 
-    if (node->left == NULL && node->left == NULL) {
+    if (node->left == NULL && node->right == NULL) {
         if (strcmp(node->value, obj_name) == 0) {
             return node;
         }
@@ -330,7 +336,9 @@ void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2) {
         _PrintNodeCharacteristic(obj_1);
         printf("\b \n");
 
-        double same = 100.0 * (double)(min_depth - not_sim_depth) / (double)min_depth;
+        double same = 0;
+        if (min_depth != 0)
+            same = 100.0 * (double)(min_depth - not_sim_depth) / (double)min_depth;
         printf("The %s is %s on %lg percents\n", p_obj_1->value, p_obj_2->value, same);
     }
 }
@@ -601,7 +609,7 @@ int TreeGraphicDump(const struct bin_tree* tree, const char* file_name) {
     fclose(dump_out);
 
     char sys_cmd[200] = "";
-    sprintf(sys_cmd, "\"C:\\Program Files\\Graphviz\\bin\\dot.exe\" -Tpng %s\\%s.dot -o %s\\%s.png", DIR_NAME, file_name, DIR_NAME, file_name);
+    sprintf(sys_cmd, GRAPHVIZ_DOT_PATH " -Tpng %s\\%s.dot -o %s\\%s.png", DIR_NAME, file_name, DIR_NAME, file_name);
     system(sys_cmd);
 
     LOGG("<img src=\"%s\\%s.png\">\n", DIR_NAME, file_name);
@@ -655,6 +663,8 @@ void _DumpSubTree(const struct node* node, FILE* dump_out) {
 
 
 int CreateDir(const char* dir_name) {
+    HARD_ASSERT(dir_name != NULL, NULL_ERROR);
+
     if (_mkdir(dir_name) == 0)
         return 0;
     
