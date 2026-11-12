@@ -332,9 +332,11 @@ void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2) {
     }
 
     if (obj_1 != NULL) {
-        printf("The %s and %s are", p_obj_1->value, p_obj_2->value);
-        _PrintNodeCharacteristic(obj_1);
-        printf("\b \n");
+        if (min_depth - not_sim_depth != 0) {
+            printf("The %s and %s are:", p_obj_1->value, p_obj_2->value);
+            _PrintNodeCharacteristic(obj_1);
+            printf("\b \n");
+        }
 
         double same = 0;
         if (min_depth != 0)
@@ -464,7 +466,17 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
     HARD_ASSERT(filename != NULL, NULL_ERROR);
 
     FILE* source = fopen(filename, "r");
-    HARD_VERIFY(source != NULL, CANT_OPEN_FILE);
+    if (source == NULL) {
+        LOGG("CAN'T OPEN FILE\n");
+        printf("cant't download save\n");
+
+        tree->root = (struct node*)calloc(1, sizeof(struct node));
+        HARD_VERIFY(tree->root != NULL, NULL_ERROR);
+        char* value = (char*)calloc(100, sizeof(char));
+        snprintf(value, 100, "unknown object");
+        tree->root->value = value;
+        return;
+    }
     
     char* ptr_save = read_line(source);
     char* save = ptr_save;
@@ -539,6 +551,14 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
         memcpy(now->value, save + 1, vlen);
 
         save = close + 1;
+    }
+
+    if (tree->root == NULL) {
+        tree->root = (struct node*)calloc(1, sizeof(struct node));
+        HARD_VERIFY(tree->root != NULL, NULL_ERROR);
+        char* value = (char*)calloc(100, sizeof(char));
+        snprintf(value, 100, "unknown object");
+        tree->root->value = value;
     }
 
     free(ptr_save);
