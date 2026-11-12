@@ -6,7 +6,6 @@ typedef char* node_elem_t;
 #define PRNODE "<%s>"
 #define PRNODE_FOR_GR "\\<%s\\>"
 #define SCNODE "<%s>"
-#define TREESAVEFILE "treesave.txt"
 #define HAVE_ERROR 1
 #define NO_VIEW 0
 #define YES_VIEW 1
@@ -14,6 +13,7 @@ typedef char* node_elem_t;
 #define VIEW_MODE 'v'
 #define FIND_MODE 'f'
 #define ADD_MODE  'a'
+#define DEFINITION_MODE   'd'
 #define COMPARE_MODE  'c'
 #define EXIT_MODE 'e'
 #define SAVE_FILENAME "treesave.txt"
@@ -23,6 +23,7 @@ const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[
 
 struct node {
     node_elem_t value;
+    int value_own;
     struct node* left;
     struct node* right;
     struct node* parent;
@@ -30,6 +31,7 @@ struct node {
 
 struct bin_tree {
     struct node* root;
+    struct String save_str;
 };
 
 /////////////////////////////////////////////////////////// ПРОТОТИПЫ ФУНКЦИЙ ///////////////////////////////////////////////////////////
@@ -97,3 +99,7 @@ void PrintNodeCharacteristic(const struct node* node);
 void _PrintNodeCharacteristic(const struct node* node);
 
 int CreateDir(const char* dir_name);
+
+void DefaultTree(struct bin_tree* tree);
+
+void PrintObjectDefinition(const struct bin_tree* tree);

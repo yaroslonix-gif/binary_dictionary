@@ -30,9 +30,9 @@ void RunBinDirectory(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
     while(1) {
-        printf("Chose command: [v]view or [f]find or [a]add or [c]compare or [e]exit\n");
+        printf("Chose command: [v]view or [f]find or [a]add or [d]define or [c]compare or [e]exit\n");
 
-        switch (WaitCommand()){
+        switch (WaitCommand()) {
         case VIEW_MODE:
             TreeDump(tree, "view", YES_VIEW);
             break;
@@ -43,6 +43,10 @@ void RunBinDirectory(struct bin_tree* tree) {
 
         case ADD_MODE:
             AddObjInTree(tree);
+            break;
+
+        case DEFINITION_MODE:
+            PrintObjectDefinition(tree);
             break;
         
         case COMPARE_MODE:
@@ -66,7 +70,7 @@ int WaitCommand() {
 
         SkipForEOS(stdin);
 
-        if (strlen(str) == 1 && (str[0] == VIEW_MODE || str[0] == FIND_MODE || str[0] == ADD_MODE || str[0] == COMPARE_MODE || str[0] == EXIT_MODE))
+        if (strlen(str) == 1 && (str[0] == VIEW_MODE || str[0] == FIND_MODE || str[0] == ADD_MODE || str[0] == DEFINITION_MODE || str[0] == COMPARE_MODE || str[0] == EXIT_MODE))
             return str[0];
         
         printf("Wrong input, try again\n");
@@ -128,15 +132,18 @@ void _FindElement(struct node* node) {
             wrong_node->parent = ch_node;
             correct_node->parent = ch_node;
             wrong_node->value = node->value;
+            wrong_node->value_own = node->value_own;
 
             printf("It is: ");
             char* str_obj_name = read_line(stdin);
             correct_node->value = str_obj_name;
+            correct_node->value_own = 1;
 
             printf("What is the difference between %s and %s:\n", str_obj_name, wrong_node->value);
             printf("%s is: ", str_obj_name);
             char* str_obj_ch = read_line(stdin);
             ch_node->value = str_obj_ch;
+            ch_node->value_own = 1;
 
             return;
         }
@@ -150,6 +157,7 @@ void _FindElement(struct node* node) {
         node->right = (struct node*)calloc(1, sizeof(struct node));
         HARD_VERIFY(node->right != NULL, NULL_ERROR);
         node->right->value = str;
+        node->right->value_own = 1;
         node->right->parent = node;
 
         return;
@@ -163,6 +171,7 @@ void _FindElement(struct node* node) {
         node->left = (struct node*)calloc(1, sizeof(struct node));
         HARD_VERIFY(node->left != NULL, NULL_ERROR);
         node->left->value = str;
+        node->left->value_own = 1;
         node->left->parent = node;
 
         return;
@@ -170,6 +179,20 @@ void _FindElement(struct node* node) {
 
     LOGG("wrong tree\n");
     abort();
+}
+
+void PrintObjectDefinition(const struct bin_tree* tree) {
+    printf("What object do you want to define? (Enter it's name)\n");
+    printf("The new object is: ");
+    char* obj_name = read_line(stdin);
+    struct node* obj = _FindListByName(tree->root, obj_name);
+
+    if (obj == NULL) {
+        printf("There is no object named %s in database\n", obj_name);
+        return;
+    }
+
+    PrintNodeCharacteristic(obj);
 }
 
 void AddObjInTree(struct bin_tree* tree) {
@@ -199,15 +222,18 @@ void AddObjInTree(struct bin_tree* tree) {
     struct node* correct_node = (struct node*)calloc(1, sizeof(struct node));
     HARD_VERIFY(correct_node != NULL, NULL_ERROR);
 
-    free(old_obj->value);
     ch_node->left = wrong_node;
     ch_node->right = correct_node;
     wrong_node->parent = ch_node;
     correct_node->parent = ch_node;
-    wrong_node->value = old_obj_name;
+    wrong_node->value = old_obj->value;
+    wrong_node->value_own = 0;
     correct_node->value = new_obj_name;
+    correct_node->value_own = 1;
     ch_node->value = str_obj_ch;
+    ch_node->value_own = 1;
 
+    free(old_obj_name);
     TreeDump(tree, "After AddObjInTree", NO_VIEW);
 }
 
@@ -289,6 +315,8 @@ void CompareObjects(const struct bin_tree* tree) {
 
     struct node* obj_1 = _FindListByName(tree->root, obj_1_name);
     struct node* obj_2 = _FindListByName(tree->root, obj_2_name);
+    free(obj_1_name);
+    free(obj_2_name);
 
     if (obj_1 == NULL) {
         printf("There is no object named %s in database\n", obj_1_name);
@@ -341,7 +369,8 @@ void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2) {
         double same = 0;
         if (min_depth != 0)
             same = 100.0 * (double)(min_depth - not_sim_depth) / (double)min_depth;
-        printf("The %s is %s on %lg percents\n", p_obj_1->value, p_obj_2->value, same);
+        
+        printf("The %s is %s on %g percents\n", p_obj_1->value, p_obj_2->value, same);
     }
 }
 
@@ -358,6 +387,7 @@ void DestroyTree(struct bin_tree* tree) {
     _DestroySubTree(tree->root);
 
     tree->root = NULL;
+    free(tree->save_str.str);
 }
 
 void _DestroySubTree(struct node* node) {
@@ -369,7 +399,9 @@ void _DestroySubTree(struct node* node) {
     if (node->right != NULL)
         _DestroySubTree(node->right);
     
-    free(node->value);
+    if (node->value_own == 1)
+        free(node->value);
+    
     free(node);
     return;
 }
@@ -453,7 +485,7 @@ void _PrintSubTreePostorder(const struct node* node, FILE* fileout) {
 void SaveTree(const struct bin_tree* tree) {
     TreeDump(tree, "save", NO_VIEW);
 
-    FILE* fileout = fopen(TREESAVEFILE, "w");
+    FILE* fileout = fopen(SAVE_FILENAME, "w");
     HARD_VERIFY(fileout != NULL, CANT_OPEN_FILE);
 
     PrintTreePreorder(tree, fileout);
@@ -470,18 +502,17 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
         LOGG("CAN'T OPEN FILE\n");
         printf("cant't download save\n");
 
-        tree->root = (struct node*)calloc(1, sizeof(struct node));
-        HARD_VERIFY(tree->root != NULL, NULL_ERROR);
-        char* value = (char*)calloc(100, sizeof(char));
-        snprintf(value, 100, "unknown object");
-        tree->root->value = value;
+        DefaultTree(tree);
         return;
     }
     
     char* ptr_save = read_line(source);
+    tree->save_str.str = ptr_save;
+    tree->save_str.len = strlen(ptr_save);
+
     char* save = ptr_save;
     struct node* now = NULL;
-    char* end = ptr_save + strlen(ptr_save);
+    char* end = ptr_save + tree->save_str.len;
     int left_empty = 0;
 
     while (save < end) {
@@ -542,27 +573,33 @@ void DownloadTree(struct bin_tree* tree, const char* filename) {
         char* close = memchr(save, '>', (size_t)(end - save));
         HARD_VERIFY(close != NULL, NULL_ERROR);
 
-        size_t vlen = (size_t)(close - save - 1);
         HARD_VERIFY(now != NULL, NULL_ERROR);
         HARD_VERIFY(now->value == NULL, NULL_ERROR);
 
-        now->value = (char*)calloc(vlen + 1, 1);
-        HARD_VERIFY(now->value != NULL, NULL_ERROR);
-        memcpy(now->value, save + 1, vlen);
+        now->value = save + 1;
+        now->value_own = 0;
+        *close = '\0';
 
         save = close + 1;
     }
 
     if (tree->root == NULL) {
-        tree->root = (struct node*)calloc(1, sizeof(struct node));
-        HARD_VERIFY(tree->root != NULL, NULL_ERROR);
-        char* value = (char*)calloc(100, sizeof(char));
-        snprintf(value, 100, "unknown object");
-        tree->root->value = value;
+        DefaultTree(tree);
     }
 
-    free(ptr_save);
     fclose(source);
+}
+
+void DefaultTree(struct bin_tree* tree) {
+    HARD_VERIFY(tree != NULL, NULL_ERROR);
+
+    tree->root = (struct node*)calloc(1, sizeof(struct node));
+    HARD_VERIFY(tree->root != NULL, NULL_ERROR);
+
+    char* value = (char*)calloc(100, sizeof(char));
+    snprintf(value, 100, "unknown object");
+    tree->root->value = value;
+    tree->root->value_own = 1;
 }
 
 /////////////////////////////////////////////////////////// Dump ///////////////////////////////////////////////////////////
@@ -578,8 +615,8 @@ void TreeDump(const struct bin_tree* tree, const char* message, const int view_f
     clock_t tik_now = clock();
 
     char file_name[200] = "";
-    strftime(file_name, sizeof(file_name), "dump%d_%m_%Y_%H_%M_%S_", time_info);
-    snprintf(file_name + strlen(file_name), 200, "%d", tik_now);
+    strftime(file_name, 200, "dump%d_%m_%Y_%H_%M_%S_", time_info);
+    snprintf(file_name + strlen(file_name), 200 - strlen(file_name), "%llu", tik_now);
     int have_err = TreeGraphicDump(tree, file_name);
 
     if (view_flag == YES_VIEW) {

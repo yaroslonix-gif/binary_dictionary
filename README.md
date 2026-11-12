@@ -6,11 +6,14 @@
 ## Структура дерева и его элемента
 ```c++
 struct bin_tree {
-    struct node* root;
+    struct node* root;          // корень дерева
+    struct String save_str;     // загруженное дерево – хранилище value узлов, для загруженной части
 };
 
 struct node {
     node_elem_t value;      // значение узла
+    int value_own;          // флаг: принадлежит ли память вершине, необходим для оптимизации хранение value
+    
     struct node* left;      // левый узел – следующая характеристика(объект), если value ложно
     struct node* right;     // правый узел – следующая характеристика(объект), если value истинно
     struct node* parent;    // предок – прошлая характеристика, для корня NULL
@@ -24,24 +27,26 @@ struct node {
 1. Просмотр двоичного справочника в формате дерева
 2. Угадывание объекта
 3. Добавление объекта
-4. Сравнение двух объектов
+4. Определение объекта
+5. Сравнение двух объектов
 
 Меню содержит эти команды и команду завершения программы 
-*Chose command: [v]view or [f]find or [a]add or [c]compare or [e]exit* – меню
+*Chose command: [v]view or [f]find or [a]add or [d]define or [c]compare or [e]exit* – меню
 
 > [!NOTE]
 > При неправильном вводе будет предложено ввести повторно
 
 > [!WARNING]
-> НО при вводе имени несуществующего объекта в режимах 3 и 4 произойдет выход в меню
+> НО при вводе имени несуществующего объекта в режимах 3, 4 и 5 произойдет выход в меню
 
 За выбор команды отвечает функция **WaitCommand()**
 
 Функции запускающие выбранную команд:
-1. TreeDump(tree, "view", YES_VIEW);
-2. FindElementInTree(tree);
-3. AddObjInTree(tree);
-4. CompareObjects(tree);
+1. TreeDump(tree, "view", YES_VIEW)
+2. FindElementInTree(tree)
+3. AddObjInTree(tree)
+4. PrintObjectDefinition(tree)
+5. CompareObjects(tree)
 
 Также присутствует команда выхода из программы
 
