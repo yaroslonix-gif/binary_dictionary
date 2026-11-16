@@ -1,6 +1,8 @@
 {
     "C_Cpp.errorSquiggles": "enabled",
     "cSpell.words": [
+        "hres",
+        "HRESULT",
         "PRNODE",
         "SCNODE"
     ]

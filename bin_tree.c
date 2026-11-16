@@ -1,7 +1,9 @@
 #include "bin_tree.h"
+#include "speaker.h"
 
 int main() {
     START_LOGG;
+
     LOGG("<pre>\n");
     LOGG("<head><style>table {border-collapse: collapse;background-color: #e6f2ff;font-family: Arial, sans-serif;} th, td {border: 1px solid #b3d7ff;padding: 12px; text-align: center;}th {background-color: #cbdff7; font-weight: bold;}</style></head>\n");
     if (CreateDir(DIR_NAME) == -1) {
@@ -30,7 +32,7 @@ void RunBinDirectory(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
     while(1) {
-        printf("Chose command: [v]view or [f]find or [a]add or [d]define or [c]compare or [e]exit\n");
+        SPEAK_AND_PRINT_BASE("Chose command: [v]view or [f]find or [a]add or [d]define or [c]compare or [e]exit\n");
 
         switch (WaitCommand()) {
         case VIEW_MODE:
@@ -73,7 +75,7 @@ int WaitCommand() {
         if (strlen(str) == 1 && (str[0] == VIEW_MODE || str[0] == FIND_MODE || str[0] == ADD_MODE || str[0] == DEFINITION_MODE || str[0] == COMPARE_MODE || str[0] == EXIT_MODE))
             return str[0];
         
-        printf("Wrong input, try again\n");
+        SPEAK_AND_PRINT_BASE("Wrong input, try again\n");
     }
 }
 
@@ -88,7 +90,7 @@ int WaitYesOrNo() {
         if (strlen(str) == 1 && (str[0] == 'y' || str[0] == 'n'))
             return (str[0] == 'y');
         
-        printf("Wrong input, try again\n");
+        SPEAK_AND_PRINT_BASE("Wrong input, try again\n");
     }
 }
 
@@ -101,7 +103,8 @@ void FindElementInTree(struct bin_tree* tree) {
 void _FindElement(struct node* node) {
     if (node == NULL) return;
 
-    printf("It is %s? (Answer: [y]yes or [n]no)\n", node->value);
+    SPEAK_AND_PRINT_BASE("It is %s? ", node->value);
+    printf("Answer: [y]yes or [n]no)\n");
     int ans = WaitYesOrNo();
 
     if (node->left != NULL && node->right != NULL) {
@@ -116,10 +119,10 @@ void _FindElement(struct node* node) {
 
     if (node->left == NULL && node->right == NULL) {
         if (ans) {
-            printf("I guess\n");
+            SPEAK_AND_PRINT_BASE("I guess\n");
             return;
         } else {
-            printf("I don't know what is it\n");
+            SPEAK_AND_PRINT_BASE("I don't know what is it\n");
 
             struct node* ch_node = node;
             struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
@@ -134,13 +137,13 @@ void _FindElement(struct node* node) {
             wrong_node->value = node->value;
             wrong_node->value_own = node->value_own;
 
-            printf("It is: ");
+            SPEAK_AND_PRINT_BASE("It is: ");
             char* str_obj_name = read_line(stdin);
             correct_node->value = str_obj_name;
             correct_node->value_own = 1;
 
-            printf("What is the difference between %s and %s:\n", str_obj_name, wrong_node->value);
-            printf("%s is: ", str_obj_name);
+            SPEAK_AND_PRINT_BASE("What is the difference between %s and %s:\n", str_obj_name, wrong_node->value);
+            SPEAK_AND_PRINT_BASE("%s is: ", str_obj_name);
             char* str_obj_ch = read_line(stdin);
             ch_node->value = str_obj_ch;
             ch_node->value_own = 1;
@@ -150,8 +153,8 @@ void _FindElement(struct node* node) {
     }
     
     if (ans == 1 && node->right == NULL) {
-        printf("I don't know what is it\n");
-        printf("It is: ");
+        SPEAK_AND_PRINT_BASE("I don't know what is it\n");
+        SPEAK_AND_PRINT_BASE("It is: ");
 
         char* str = read_line(stdin);
         node->right = (struct node*)calloc(1, sizeof(struct node));
@@ -164,8 +167,8 @@ void _FindElement(struct node* node) {
     }
 
     if (ans == 0 && node->left == NULL) {
-        printf("I don't know what is it\n");
-        printf("It is: ");
+        SPEAK_AND_PRINT_BASE("I don't know what is it\n");
+        SPEAK_AND_PRINT_BASE("It is: ");
 
         char* str = read_line(stdin);
         node->left = (struct node*)calloc(1, sizeof(struct node));
@@ -182,13 +185,13 @@ void _FindElement(struct node* node) {
 }
 
 void PrintObjectDefinition(const struct bin_tree* tree) {
-    printf("What object do you want to define? (Enter it's name)\n");
-    printf("The new object is: ");
+    SPEAK_AND_PRINT_BASE("What object do you want to define? (Enter it's name)\n");
+    SPEAK_AND_PRINT_BASE("The new object is: ");
     char* obj_name = read_line(stdin);
     struct node* obj = _FindListByName(tree->root, obj_name);
 
     if (obj == NULL) {
-        printf("There is no object named %s in database\n", obj_name);
+        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", obj_name);
         return;
     }
 
@@ -198,22 +201,22 @@ void PrintObjectDefinition(const struct bin_tree* tree) {
 void AddObjInTree(struct bin_tree* tree) {
     TreeDump(tree, "Before AddObjInTree", NO_VIEW);
 
-    printf("What object do you want to add? (Enter it's name)\n");
-    printf("The new object is: ");
+    SPEAK_AND_PRINT_BASE("What object do you want to add? (Enter it's name)\n");
+    SPEAK_AND_PRINT_BASE("The new object is: ");
     char* new_obj_name = read_line(stdin);
 
-    printf("With witch object do you want to compare %s? (Enter it's name)\n", new_obj_name);
-    printf("The object is: ");
+    SPEAK_AND_PRINT_BASE("With witch object do you want to compare %s? (Enter it's name)\n", new_obj_name);
+    SPEAK_AND_PRINT_BASE("The object is: ");
     char* old_obj_name = read_line(stdin);
 
     struct node* old_obj = _FindListByName(tree->root, old_obj_name);
     if (old_obj == NULL) {
-        printf("There is no object named %s in database\n", old_obj_name);
+        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", old_obj_name);
         return;
     }
 
-    printf("What is the difference between %s and %s:\n", new_obj_name, old_obj_name);
-    printf("%s is: ", new_obj_name);
+    SPEAK_AND_PRINT_BASE("What is the difference between %s and %s:\n", new_obj_name, old_obj_name);
+    SPEAK_AND_PRINT_BASE("%s is: ", new_obj_name);
     char* str_obj_ch = read_line(stdin);
     
     struct node* ch_node = old_obj;
@@ -268,14 +271,14 @@ uint64_t GetNodeDepth(const struct node* node) {
 
 void PrintNodeCharacteristicReverse(const struct node* node) {
     HARD_ASSERT(node != NULL, NULL_ERROR);
-    printf("%s is:", node->value);
+    SPEAK_AND_PRINT_BASE("%s is:", node->value);
 
     while (node->parent != NULL) {
         if (node->parent->left == node)
-            printf(" not");
+            SPEAK_AND_PRINT_BASE(" not");
         
         node = node->parent;
-        printf(" %s,", node->value);
+        SPEAK_AND_PRINT_BASE(" %s,", node->value);
     }
 
     printf("\b \n");
@@ -284,7 +287,7 @@ void PrintNodeCharacteristicReverse(const struct node* node) {
 void PrintNodeCharacteristic(const struct node* node) {
     HARD_ASSERT(node != NULL, NULL_ERROR);
 
-    printf("%s is:", node->value);
+    SPEAK_AND_PRINT_BASE("%s is:", node->value);
     _PrintNodeCharacteristic(node);
     printf("\b \n");
 }
@@ -296,21 +299,21 @@ void _PrintNodeCharacteristic(const struct node* node) {
     _PrintNodeCharacteristic(node->parent);
 
     if (node->parent->left == node)
-        printf(" not");
+        SPEAK_AND_PRINT_BASE(" not");
     
-    printf(" %s,", node->parent->value);
+    SPEAK_AND_PRINT_BASE(" %s,", node->parent->value);
     return;
 }
 
 void CompareObjects(const struct bin_tree* tree) {
     TreeDump(tree, "CompareObjects", NO_VIEW);
 
-    printf("What objects do you want to compare? (Enter first name of object)\n");
-    printf("The first object is: ");
+    SPEAK_AND_PRINT_BASE("What objects do you want to compare? (Enter first name of object)\n");
+    SPEAK_AND_PRINT_BASE("The first object is: ");
     char* obj_1_name = read_line(stdin);
 
-    printf("What second do you want to compare? (Enter second name of object)\n");
-    printf("The second object is: ");
+    SPEAK_AND_PRINT_BASE("What second do you want to compare? (Enter second name of object)\n");
+    SPEAK_AND_PRINT_BASE("The second object is: ");
     char* obj_2_name = read_line(stdin);
 
     struct node* obj_1 = _FindListByName(tree->root, obj_1_name);
@@ -319,11 +322,12 @@ void CompareObjects(const struct bin_tree* tree) {
     free(obj_2_name);
 
     if (obj_1 == NULL) {
-        printf("There is no object named %s in database\n", obj_1_name);
+        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", obj_1_name);
         return;
     }
+
     if (obj_2 == NULL) {
-        printf("There is no object named %s in database\n", obj_2_name);
+        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", obj_2_name);
         return;
     }
 
@@ -361,7 +365,7 @@ void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2) {
 
     if (obj_1 != NULL) {
         if (min_depth - not_sim_depth != 0) {
-            printf("The %s and %s are:", p_obj_1->value, p_obj_2->value);
+            SPEAK_AND_PRINT_BASE("The %s and %s are:", p_obj_1->value, p_obj_2->value);
             _PrintNodeCharacteristic(obj_1);
             printf("\b \n");
         }
@@ -370,7 +374,7 @@ void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2) {
         if (min_depth != 0)
             same = 100.0 * (double)(min_depth - not_sim_depth) / (double)min_depth;
         
-        printf("The %s is %s on %g percents\n", p_obj_1->value, p_obj_2->value, same);
+        SPEAK_AND_PRINT_BASE("The %s is %s on %g percents\n", p_obj_1->value, p_obj_2->value, same);
     }
 }
 
