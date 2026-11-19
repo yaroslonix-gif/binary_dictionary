@@ -9,6 +9,7 @@ typedef char* node_elem_t;
 #define HAVE_ERROR 1
 #define NO_VIEW 0
 #define YES_VIEW 1
+#define BASE_STR_LEN 200
 
 #define VIEW_MODE 'v'
 #define FIND_MODE 'f'

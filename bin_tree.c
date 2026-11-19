@@ -105,6 +105,7 @@ void _FindElement(struct node* node) {
 
     SPEAK_AND_PRINT_BASE("It is %s? ", node->value);
     printf("Answer: [y]yes or [n]no)\n");
+    SpeakFlush();
     int ans = WaitYesOrNo();
 
     if (node->left != NULL && node->right != NULL) {
@@ -138,12 +139,15 @@ void _FindElement(struct node* node) {
             wrong_node->value_own = node->value_own;
 
             SPEAK_AND_PRINT_BASE("It is: ");
+            SpeakFlush();
             char* str_obj_name = read_line(stdin);
             correct_node->value = str_obj_name;
             correct_node->value_own = 1;
 
             SPEAK_AND_PRINT_BASE("What is the difference between %s and %s:\n", str_obj_name, wrong_node->value);
             SPEAK_AND_PRINT_BASE("%s is: ", str_obj_name);
+            SpeakFlush();
+
             char* str_obj_ch = read_line(stdin);
             ch_node->value = str_obj_ch;
             ch_node->value_own = 1;
@@ -155,6 +159,7 @@ void _FindElement(struct node* node) {
     if (ans == 1 && node->right == NULL) {
         SPEAK_AND_PRINT_BASE("I don't know what is it\n");
         SPEAK_AND_PRINT_BASE("It is: ");
+        SpeakFlush();
 
         char* str = read_line(stdin);
         node->right = (struct node*)calloc(1, sizeof(struct node));
@@ -169,6 +174,7 @@ void _FindElement(struct node* node) {
     if (ans == 0 && node->left == NULL) {
         SPEAK_AND_PRINT_BASE("I don't know what is it\n");
         SPEAK_AND_PRINT_BASE("It is: ");
+        SpeakFlush();
 
         char* str = read_line(stdin);
         node->left = (struct node*)calloc(1, sizeof(struct node));
@@ -187,6 +193,7 @@ void _FindElement(struct node* node) {
 void PrintObjectDefinition(const struct bin_tree* tree) {
     SPEAK_AND_PRINT_BASE("What object do you want to define? (Enter it's name)\n");
     SPEAK_AND_PRINT_BASE("The new object is: ");
+    SpeakFlush();
     char* obj_name = read_line(stdin);
     struct node* obj = _FindListByName(tree->root, obj_name);
 
@@ -203,10 +210,12 @@ void AddObjInTree(struct bin_tree* tree) {
 
     SPEAK_AND_PRINT_BASE("What object do you want to add? (Enter it's name)\n");
     SPEAK_AND_PRINT_BASE("The new object is: ");
+    SpeakFlush();
     char* new_obj_name = read_line(stdin);
 
     SPEAK_AND_PRINT_BASE("With witch object do you want to compare %s? (Enter it's name)\n", new_obj_name);
     SPEAK_AND_PRINT_BASE("The object is: ");
+    SpeakFlush();
     char* old_obj_name = read_line(stdin);
 
     struct node* old_obj = _FindListByName(tree->root, old_obj_name);
@@ -282,6 +291,7 @@ void PrintNodeCharacteristicReverse(const struct node* node) {
     }
 
     printf("\b \n");
+    SpeakFlush();
 }
 
 void PrintNodeCharacteristic(const struct node* node) {
@@ -290,6 +300,7 @@ void PrintNodeCharacteristic(const struct node* node) {
     SPEAK_AND_PRINT_BASE("%s is:", node->value);
     _PrintNodeCharacteristic(node);
     printf("\b \n");
+    SpeakFlush();
 }
 
 void _PrintNodeCharacteristic(const struct node* node) {
@@ -310,10 +321,12 @@ void CompareObjects(const struct bin_tree* tree) {
 
     SPEAK_AND_PRINT_BASE("What objects do you want to compare? (Enter first name of object)\n");
     SPEAK_AND_PRINT_BASE("The first object is: ");
+    SpeakFlush();
     char* obj_1_name = read_line(stdin);
 
     SPEAK_AND_PRINT_BASE("What second do you want to compare? (Enter second name of object)\n");
     SPEAK_AND_PRINT_BASE("The second object is: ");
+    SpeakFlush();
     char* obj_2_name = read_line(stdin);
 
     struct node* obj_1 = _FindListByName(tree->root, obj_1_name);
@@ -618,16 +631,16 @@ void TreeDump(const struct bin_tree* tree, const char* message, const int view_f
     time_info = localtime(&now_time);
     clock_t tik_now = clock();
 
-    char file_name[200] = "";
-    strftime(file_name, 200, "dump%d_%m_%Y_%H_%M_%S_", time_info);
-    snprintf(file_name + strlen(file_name), 200 - strlen(file_name), "%llu", tik_now);
+    char file_name[BASE_STR_LEN] = "";
+    strftime(file_name, BASE_STR_LEN, "dump%d_%m_%Y_%H_%M_%S_", time_info);
+    snprintf(file_name + strlen(file_name), BASE_STR_LEN - strlen(file_name), "%llu", tik_now);
     int have_err = TreeGraphicDump(tree, file_name);
 
     if (view_flag == YES_VIEW) {
-        char sys_cmd[400] = "";
-        char path[200] = {};
-        _getcwd(path, 200);
-        snprintf(sys_cmd, 400, "start \"\" \"%s\\%s\\%s.png\"", path, DIR_NAME, file_name);
+        char sys_cmd[2 * BASE_STR_LEN] = "";
+        char path[BASE_STR_LEN] = {};
+        _getcwd(path, BASE_STR_LEN);
+        snprintf(sys_cmd, 2 * BASE_STR_LEN, "start \"\" \"%s\\%s\\%s.png\"", path, DIR_NAME, file_name);
         system(sys_cmd);
     }
 
@@ -652,7 +665,7 @@ int TreeGraphicDump(const struct bin_tree* tree, const char* file_name) {
 
     if (tree->root == NULL) return have_err;
     
-    char file_dot[200] = "";
+    char file_dot[BASE_STR_LEN] = "";
     sprintf(file_dot, "%s\\%s.dot", DIR_NAME, file_name);
 
     FILE* dump_out = fopen(file_dot, "w");
