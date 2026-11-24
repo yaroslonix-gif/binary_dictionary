@@ -14,11 +14,11 @@ int main() {
     InitTree(&tree);
     DownloadTree(&tree, SAVE_FILENAME);
     TreeDump(&tree, "dump", NO_VIEW);
-    PrintTreePreorder(&tree, stdout);
+    //PrintTreePreorder(&tree, stdout);
 
     RunBinDirectory(&tree);
 
-    PrintTreePreorder(&tree, stdout);
+    //PrintTreePreorder(&tree, stdout);
     SaveTree(&tree);
     TreeDump(&tree, "dump", NO_VIEW);
 
@@ -27,12 +27,12 @@ int main() {
     return 0;
 }
 
-/////////////////////////////////////////////////////////// BinDirectory ///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////// BinDictionary ///////////////////////////////////////////////////////////
 void RunBinDirectory(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
     while(1) {
-        SPEAK_AND_PRINT_BASE("Chose command: [v]view or [f]find or [a]add or [d]define or [c]compare or [e]exit\n");
+        SPEAK_AND_PRINT_BASE("Vyberite komandu: [v]prosmotr, [f]poisk, [a]dobavit, [d]opredelit, [c]sravnit ili [e]vyhod\n");
 
         switch (WaitCommand()) {
         case VIEW_MODE:
@@ -72,10 +72,11 @@ int WaitCommand() {
 
         SkipForEOS(stdin);
 
-        if (strlen(str) == 1 && (str[0] == VIEW_MODE || str[0] == FIND_MODE || str[0] == ADD_MODE || str[0] == DEFINITION_MODE || str[0] == COMPARE_MODE || str[0] == EXIT_MODE))
+        if (strlen(str) == 1 && (str[0] == VIEW_MODE       || str[0] == FIND_MODE    || str[0] == ADD_MODE ||
+                                 str[0] == DEFINITION_MODE || str[0] == COMPARE_MODE || str[0] == EXIT_MODE))
             return str[0];
         
-        SPEAK_AND_PRINT_BASE("Wrong input, try again\n");
+        SPEAK_AND_PRINT_BASE("Nevernyy vvod, poprobuyte snova\n");
     }
 }
 
@@ -90,7 +91,7 @@ int WaitYesOrNo() {
         if (strlen(str) == 1 && (str[0] == 'y' || str[0] == 'n'))
             return (str[0] == 'y');
         
-        SPEAK_AND_PRINT_BASE("Wrong input, try again\n");
+        SPEAK_AND_PRINT_BASE("Nevernyy vvod, poprobuyte snova\n");
     }
 }
 
@@ -103,8 +104,8 @@ void FindElementInTree(struct bin_tree* tree) {
 void _FindElement(struct node* node) {
     if (node == NULL) return;
 
-    SPEAK_AND_PRINT_BASE("It is %s? ", node->value);
-    printf("Answer: [y]yes or [n]no)\n");
+    SPEAK_AND_PRINT_BASE("Eto %s? ", node->value);
+    printf("(Otvet: [y]da ili [n]net)\n");
     SpeakFlush();
     int ans = WaitYesOrNo();
 
@@ -120,45 +121,24 @@ void _FindElement(struct node* node) {
 
     if (node->left == NULL && node->right == NULL) {
         if (ans) {
-            SPEAK_AND_PRINT_BASE("I guess\n");
+            SPEAK_AND_PRINT_BASE("Ya ugadal\n");
             return;
         } else {
-            SPEAK_AND_PRINT_BASE("I don't know what is it\n");
-
-            struct node* ch_node = node;
-            struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
-            HARD_VERIFY(wrong_node != NULL, NULL_ERROR);
-            struct node* correct_node = (struct node*)calloc(1, sizeof(struct node));
-            HARD_VERIFY(correct_node != NULL, NULL_ERROR);
-
-            ch_node->left = wrong_node;
-            ch_node->right = correct_node;
-            wrong_node->parent = ch_node;
-            correct_node->parent = ch_node;
-            wrong_node->value = node->value;
-            wrong_node->value_own = node->value_own;
-
-            SPEAK_AND_PRINT_BASE("It is: ");
-            SpeakFlush();
-            char* str_obj_name = read_line(stdin);
-            correct_node->value = str_obj_name;
-            correct_node->value_own = 1;
-
-            SPEAK_AND_PRINT_BASE("What is the difference between %s and %s:\n", str_obj_name, wrong_node->value);
-            SPEAK_AND_PRINT_BASE("%s is: ", str_obj_name);
-            SpeakFlush();
-
-            char* str_obj_ch = read_line(stdin);
-            ch_node->value = str_obj_ch;
-            ch_node->value_own = 1;
+            _AddUnknownObj(node);
 
             return;
         }
     }
     
+    _AddUnknownObjInleftOrRight(node, ans);
+}
+
+void _AddUnknownObjInleftOrRight(struct node* node, int ans) {
+    if (node == NULL) return;
+
     if (ans == 1 && node->right == NULL) {
-        SPEAK_AND_PRINT_BASE("I don't know what is it\n");
-        SPEAK_AND_PRINT_BASE("It is: ");
+        SPEAK_AND_PRINT_BASE("Ya ne znayu chto eto\n");
+        SPEAK_AND_PRINT_BASE("Eto: ");
         SpeakFlush();
 
         char* str = read_line(stdin);
@@ -172,8 +152,8 @@ void _FindElement(struct node* node) {
     }
 
     if (ans == 0 && node->left == NULL) {
-        SPEAK_AND_PRINT_BASE("I don't know what is it\n");
-        SPEAK_AND_PRINT_BASE("It is: ");
+        SPEAK_AND_PRINT_BASE("Ya ne znayu chto eto\n");
+        SPEAK_AND_PRINT_BASE("Eto: ");
         SpeakFlush();
 
         char* str = read_line(stdin);
@@ -186,48 +166,104 @@ void _FindElement(struct node* node) {
         return;
     }
 
-    LOGG("wrong tree\n");
-    abort();
+    _FindElement(ans ? node->right : node->left);
+}
+
+void _AddUnknownObj(struct node* node) {
+    if (node == NULL) return;
+
+    SPEAK_AND_PRINT_BASE("Ya ne znayu chto eto\n");
+
+    struct node* ch_node = node;
+    struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
+    HARD_VERIFY(wrong_node != NULL, NULL_ERROR);
+    struct node* correct_node = (struct node*)calloc(1, sizeof(struct node));
+    HARD_VERIFY(correct_node != NULL, NULL_ERROR);
+
+    ch_node->left = wrong_node;
+    ch_node->right = correct_node;
+    wrong_node->parent = ch_node;
+    correct_node->parent = ch_node;
+    wrong_node->value = node->value;
+    wrong_node->value_own = node->value_own;
+
+    SPEAK_AND_PRINT_BASE("Eto: ");
+    SpeakFlush();
+    char* str_obj_name = read_line(stdin);
+    correct_node->value = str_obj_name;
+    correct_node->value_own = 1;
+
+    SPEAK_AND_PRINT_BASE("V chem raznitsa mezhdu %s i %s:\n", str_obj_name, wrong_node->value);
+    SPEAK_AND_PRINT_BASE("%s: ", str_obj_name);
+    SpeakFlush();
+
+    char* str_obj_ch = read_line(stdin);
+    ch_node->value = str_obj_ch;
+    ch_node->value_own = 1;
 }
 
 void PrintObjectDefinition(const struct bin_tree* tree) {
-    SPEAK_AND_PRINT_BASE("What object do you want to define? (Enter it's name)\n");
-    SPEAK_AND_PRINT_BASE("The new object is: ");
+    SPEAK_AND_PRINT_BASE("Kakoy obekt vy hotite opredelit? (Vvedite ego imya)\n");
+    SPEAK_AND_PRINT_BASE("Oprediliaemiy obekt: ");
     SpeakFlush();
     char* obj_name = read_line(stdin);
     struct node* obj = _FindListByName(tree->root, obj_name);
 
     if (obj == NULL) {
-        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", obj_name);
+        SPEAK_AND_PRINT_BASE("V baze net obekta s imenem %s\n", obj_name);
+        free(obj_name);
         return;
     }
+    free(obj_name);
 
     PrintNodeCharacteristic(obj);
 }
 
+static void _AddObjInTreeOrganizeNodes(struct node* old_obj, char* new_obj_name, char* str_obj_ch);
+
 void AddObjInTree(struct bin_tree* tree) {
     TreeDump(tree, "Before AddObjInTree", NO_VIEW);
 
-    SPEAK_AND_PRINT_BASE("What object do you want to add? (Enter it's name)\n");
-    SPEAK_AND_PRINT_BASE("The new object is: ");
+    SPEAK_AND_PRINT_BASE("Kakoy obekt vy hotite dobavit? (Vvedite ego imya)\n");
+    SPEAK_AND_PRINT_BASE("Novyy obekt: ");
     SpeakFlush();
+
     char* new_obj_name = read_line(stdin);
+    if (new_obj_name == NULL) return;
 
-    SPEAK_AND_PRINT_BASE("With witch object do you want to compare %s? (Enter it's name)\n", new_obj_name);
-    SPEAK_AND_PRINT_BASE("The object is: ");
+    SPEAK_AND_PRINT_BASE("S kakim obektom vy hotite sravnit %s? (Vvedite ego imya)\n", new_obj_name);
+    SPEAK_AND_PRINT_BASE("Obekt: ");
     SpeakFlush();
-    char* old_obj_name = read_line(stdin);
 
-    struct node* old_obj = _FindListByName(tree->root, old_obj_name);
-    if (old_obj == NULL) {
-        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", old_obj_name);
+    char* old_obj_name = read_line(stdin);
+    if (old_obj_name == NULL) {
+        free(new_obj_name);
         return;
     }
 
-    SPEAK_AND_PRINT_BASE("What is the difference between %s and %s:\n", new_obj_name, old_obj_name);
-    SPEAK_AND_PRINT_BASE("%s is: ", new_obj_name);
+    struct node* old_obj = _FindListByName(tree->root, old_obj_name);
+    if (old_obj == NULL) {
+        SPEAK_AND_PRINT_BASE("V baze net obekta s imenem %s\n", old_obj_name);
+        free(new_obj_name);
+        free(old_obj_name);
+        return;
+    }
+
+    SPEAK_AND_PRINT_BASE("V chem raznitsa mezhdu %s i %s:\n", new_obj_name, old_obj_name);
+    SPEAK_AND_PRINT_BASE("%s: ", new_obj_name);
     char* str_obj_ch = read_line(stdin);
     
+    _AddObjInTreeOrganizeNodes(old_obj, new_obj_name, str_obj_ch);
+
+    free(old_obj_name);
+    TreeDump(tree, "After AddObjInTree", NO_VIEW);
+}
+
+static void _AddObjInTreeOrganizeNodes(struct node* old_obj, char* new_obj_name, char* str_obj_ch) {
+    HARD_ASSERT(old_obj != NULL, NULL_ERROR);
+    HARD_ASSERT(new_obj_name != NULL, NULL_ERROR);
+    HARD_ASSERT(str_obj_ch != NULL, NULL_ERROR);
+
     struct node* ch_node = old_obj;
     struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));
     HARD_VERIFY(wrong_node != NULL, NULL_ERROR);
@@ -239,14 +275,11 @@ void AddObjInTree(struct bin_tree* tree) {
     wrong_node->parent = ch_node;
     correct_node->parent = ch_node;
     wrong_node->value = old_obj->value;
-    wrong_node->value_own = 0;
+    wrong_node->value_own = old_obj->value_own;
     correct_node->value = new_obj_name;
     correct_node->value_own = 1;
     ch_node->value = str_obj_ch;
     ch_node->value_own = 1;
-
-    free(old_obj_name);
-    TreeDump(tree, "After AddObjInTree", NO_VIEW);
 }
 
 struct node* _FindListByName(struct node* node, const node_elem_t obj_name) {
@@ -266,38 +299,10 @@ struct node* _FindListByName(struct node* node, const node_elem_t obj_name) {
     return obj;
 }
 
-uint64_t GetNodeDepth(const struct node* node) {
-    HARD_ASSERT(node != NULL, NULL_ERROR);
-    uint64_t depth = 0;
-
-    while (node->parent != NULL) {
-        depth += 1;
-        node = node->parent;
-    }
-
-    return depth;
-}
-
-void PrintNodeCharacteristicReverse(const struct node* node) {
-    HARD_ASSERT(node != NULL, NULL_ERROR);
-    SPEAK_AND_PRINT_BASE("%s is:", node->value);
-
-    while (node->parent != NULL) {
-        if (node->parent->left == node)
-            SPEAK_AND_PRINT_BASE(" not");
-        
-        node = node->parent;
-        SPEAK_AND_PRINT_BASE(" %s,", node->value);
-    }
-
-    printf("\b \n");
-    SpeakFlush();
-}
-
 void PrintNodeCharacteristic(const struct node* node) {
     HARD_ASSERT(node != NULL, NULL_ERROR);
 
-    SPEAK_AND_PRINT_BASE("%s is:", node->value);
+    SPEAK_AND_PRINT_BASE("%s eto:", node->value);
     _PrintNodeCharacteristic(node);
     printf("\b \n");
     SpeakFlush();
@@ -310,7 +315,7 @@ void _PrintNodeCharacteristic(const struct node* node) {
     _PrintNodeCharacteristic(node->parent);
 
     if (node->parent->left == node)
-        SPEAK_AND_PRINT_BASE(" not");
+        SPEAK_AND_PRINT_BASE(" ne");
     
     SPEAK_AND_PRINT_BASE(" %s,", node->parent->value);
     return;
@@ -319,30 +324,35 @@ void _PrintNodeCharacteristic(const struct node* node) {
 void CompareObjects(const struct bin_tree* tree) {
     TreeDump(tree, "CompareObjects", NO_VIEW);
 
-    SPEAK_AND_PRINT_BASE("What objects do you want to compare? (Enter first name of object)\n");
-    SPEAK_AND_PRINT_BASE("The first object is: ");
+    SPEAK_AND_PRINT_BASE("Kakie obekty vy hotite sravnit? (Vvedite imya pervogo obekta)\n");
+    SPEAK_AND_PRINT_BASE("Pervyy obekt: ");
     SpeakFlush();
     char* obj_1_name = read_line(stdin);
 
-    SPEAK_AND_PRINT_BASE("What second do you want to compare? (Enter second name of object)\n");
-    SPEAK_AND_PRINT_BASE("The second object is: ");
+    SPEAK_AND_PRINT_BASE("Kakoy vtoroy obekt vy hotite sravnit? (Vvedite imya vtorogo obekta)\n");
+    SPEAK_AND_PRINT_BASE("Vtoroy obekt: ");
     SpeakFlush();
     char* obj_2_name = read_line(stdin);
 
     struct node* obj_1 = _FindListByName(tree->root, obj_1_name);
     struct node* obj_2 = _FindListByName(tree->root, obj_2_name);
-    free(obj_1_name);
-    free(obj_2_name);
 
     if (obj_1 == NULL) {
-        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", obj_1_name);
+        SPEAK_AND_PRINT_BASE("V baze net obekta s imenem %s\n", obj_1_name);
+        free(obj_1_name);
+        free(obj_2_name);
         return;
     }
 
     if (obj_2 == NULL) {
-        SPEAK_AND_PRINT_BASE("There is no object named %s in database\n", obj_2_name);
+        SPEAK_AND_PRINT_BASE("V baze net obekta s imenem %s\n", obj_2_name);
+        free(obj_1_name);
+        free(obj_2_name);
         return;
     }
+
+    free(obj_1_name);
+    free(obj_2_name);
 
     _CompareObjects(obj_1, obj_2);
 }
@@ -370,381 +380,23 @@ void _CompareObjects(const struct node* p_obj_1, const struct node* p_obj_2) {
     }
 
     uint64_t not_sim_depth = 0;
-    while (obj_1 != obj_2) {
+    while (obj_1 != obj_2 && obj_1 != NULL && obj_2 != NULL) {
         obj_1 = obj_1->parent;
         obj_2 = obj_2->parent;
         not_sim_depth++;
     }
 
     if (obj_1 != NULL) {
-        if (min_depth - not_sim_depth != 0) {
-            SPEAK_AND_PRINT_BASE("The %s and %s are:", p_obj_1->value, p_obj_2->value);
+        if ((int64_t)min_depth - (int64_t)not_sim_depth != 0) {
+            SPEAK_AND_PRINT_BASE("Chto obshchego u %s i %s:", p_obj_1->value, p_obj_2->value);
             _PrintNodeCharacteristic(obj_1);
             printf("\b \n");
         }
 
-        double same = 0;
-        if (min_depth != 0)
-            same = 100.0 * (double)(min_depth - not_sim_depth) / (double)min_depth;
+        double same = 100.0;
+        if (min_depth > 0)
+            same = 100.0 * (double)((int64_t)min_depth - (int64_t)not_sim_depth) / (double)min_depth;
         
-        SPEAK_AND_PRINT_BASE("The %s is %s on %g percents\n", p_obj_1->value, p_obj_2->value, same);
+        SPEAK_AND_PRINT_BASE("%s i %s pohozhi na %g procentov\n", p_obj_1->value, p_obj_2->value, same);
     }
-}
-
-/////////////////////////////////////////////////////////// TREE ///////////////////////////////////////////////////////////
-void InitTree(struct bin_tree* tree) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-
-    tree->root = NULL;
-}
-
-void DestroyTree(struct bin_tree* tree) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-
-    _DestroySubTree(tree->root);
-
-    tree->root = NULL;
-    free(tree->save_str.str);
-}
-
-void _DestroySubTree(struct node* node) {
-    if (node == NULL) return;
-
-    if (node->left != NULL)
-        _DestroySubTree(node->left);
-    
-    if (node->right != NULL)
-        _DestroySubTree(node->right);
-    
-    if (node->value_own == 1)
-        free(node->value);
-    
-    free(node);
-    return;
-}
-
-/////////////////////////////////////////////////////////// Print ///////////////////////////////////////////////////////////
-void PrintTreePreorder(const struct bin_tree* tree, FILE* fileout) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-    HARD_ASSERT(fileout != NULL, NULL_ERROR);
-
-    _PrintSubTreePreorder(tree->root, fileout);
-    fprintf(fileout, "\n");
-}
-
-void PrintTreeInorder(const struct bin_tree* tree, FILE* fileout) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-    HARD_ASSERT(fileout != NULL, NULL_ERROR);
-
-    _PrintSubTreeInorder(tree->root, fileout);
-    fprintf(fileout, "\n");
-}
-
-void PrintTreePostorder(const struct bin_tree* tree, FILE* fileout) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-    HARD_ASSERT(fileout != NULL, NULL_ERROR);
-
-    _PrintSubTreePostorder(tree->root, fileout);
-    fprintf(fileout, "\n");
-}
-
-void _PrintSubTreePreorder(const struct node* node, FILE* fileout) {
-    HARD_ASSERT(fileout != NULL, NULL_ERROR);
-
-    if (node == NULL) {
-        fprintf(fileout, "()");
-        return;
-    }
-
-    fprintf(fileout, "(");
-
-    fprintf(fileout, PRNODE, node->value);
-    _PrintSubTreePreorder(node->left, fileout);
-    _PrintSubTreePreorder(node->right, fileout);
-
-    fprintf(fileout, ")");
-}
-
-void _PrintSubTreeInorder(const struct node* node, FILE* fileout) {
-    HARD_ASSERT(fileout != NULL, NULL_ERROR);
-
-    if (node == NULL) {
-        fprintf(fileout, "()");
-        return;
-    }
-
-    fprintf(fileout, "(");
-
-    _PrintSubTreeInorder(node->left, fileout);
-    fprintf(fileout, PRNODE, node->value);
-    _PrintSubTreeInorder(node->right, fileout);
-
-    fprintf(fileout, ")");
-}
-
-void _PrintSubTreePostorder(const struct node* node, FILE* fileout) {
-    HARD_ASSERT(fileout != NULL, NULL_ERROR);
-
-    if (node == NULL) {
-        fprintf(fileout, "()");
-        return;
-    }
-
-    fprintf(fileout, "(");
-
-    _PrintSubTreePostorder(node->left, fileout);
-    _PrintSubTreePostorder(node->right, fileout);
-    fprintf(fileout, PRNODE, node->value);
-
-    fprintf(fileout, ")");
-}
-
-void SaveTree(const struct bin_tree* tree) {
-    TreeDump(tree, "save", NO_VIEW);
-
-    FILE* fileout = fopen(SAVE_FILENAME, "w");
-    HARD_VERIFY(fileout != NULL, CANT_OPEN_FILE);
-
-    PrintTreePreorder(tree, fileout);
-
-    fclose(fileout);
-}
-
-void DownloadTree(struct bin_tree* tree, const char* filename) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-    HARD_ASSERT(filename != NULL, NULL_ERROR);
-
-    FILE* source = fopen(filename, "r");
-    if (source == NULL) {
-        LOGG("CAN'T OPEN FILE\n");
-        printf("cant't download save\n");
-
-        DefaultTree(tree);
-        return;
-    }
-    
-    char* ptr_save = read_line(source);
-    tree->save_str.str = ptr_save;
-    tree->save_str.len = strlen(ptr_save);
-
-    char* save = ptr_save;
-    struct node* now = NULL;
-    char* end = ptr_save + tree->save_str.len;
-    int left_empty = 0;
-
-    while (save < end) {
-        if (save[0] == '(') {
-            if (save + 1 < end && save[1] == ')') {
-                if (now != NULL) {
-                    if (now->left == NULL && !left_empty) {
-                        left_empty = 1;
-                    }
-                }
-                save += 2;
-                continue;
-            }
-
-            if (tree->root == NULL) {
-                tree->root = (struct node*)calloc(1, sizeof(struct node));
-                HARD_VERIFY(tree->root != NULL, NULL_ERROR);
-                now = tree->root;
-                now->parent = NULL;
-
-            } else {
-                HARD_VERIFY(now != NULL, NULL_ERROR);
-                struct node* new_node = (struct node*)calloc(1, sizeof(struct node));
-                HARD_VERIFY(new_node != NULL, NULL_ERROR);
-
-                if (now->left == NULL && !left_empty) {
-                    now->left = new_node;
-                } else if (now->right == NULL) {
-                    now->right = new_node;
-                } else {
-                    LOGG("WRONG save format\n");
-                    abort();
-                }
-
-                new_node->parent = now;
-                left_empty = 0;
-                now = new_node;
-            }
-
-            save += 1;
-            continue;
-        }
-
-        if (save[0] == ')') {
-            HARD_VERIFY(now != NULL, NULL_ERROR);
-
-            if (now->parent != NULL && now->parent->left == now) {
-                left_empty = 1;
-            } else {
-                left_empty = 0;
-            }
-            
-            now = now->parent;
-            save += 1;
-            continue;
-        }
-
-        char* close = memchr(save, '>', (size_t)(end - save));
-        HARD_VERIFY(close != NULL, NULL_ERROR);
-
-        HARD_VERIFY(now != NULL, NULL_ERROR);
-        HARD_VERIFY(now->value == NULL, NULL_ERROR);
-
-        now->value = save + 1;
-        now->value_own = 0;
-        *close = '\0';
-
-        save = close + 1;
-    }
-
-    if (tree->root == NULL) {
-        DefaultTree(tree);
-    }
-
-    fclose(source);
-}
-
-void DefaultTree(struct bin_tree* tree) {
-    HARD_VERIFY(tree != NULL, NULL_ERROR);
-
-    tree->root = (struct node*)calloc(1, sizeof(struct node));
-    HARD_VERIFY(tree->root != NULL, NULL_ERROR);
-
-    char* value = (char*)calloc(100, sizeof(char));
-    snprintf(value, 100, "unknown object");
-    tree->root->value = value;
-    tree->root->value_own = 1;
-}
-
-/////////////////////////////////////////////////////////// Dump ///////////////////////////////////////////////////////////
-void TreeDump(const struct bin_tree* tree, const char* message, const int view_flag) {
-    HARD_ASSERT(message != NULL, NULL_ERROR);
-
-    LOGG(message);
-    time_t now_time = 0;
-    struct tm* time_info = NULL;
-
-    time(&now_time);
-    time_info = localtime(&now_time);
-    clock_t tik_now = clock();
-
-    char file_name[BASE_STR_LEN] = "";
-    strftime(file_name, BASE_STR_LEN, "dump%d_%m_%Y_%H_%M_%S_", time_info);
-    snprintf(file_name + strlen(file_name), BASE_STR_LEN - strlen(file_name), "%llu", tik_now);
-    int have_err = TreeGraphicDump(tree, file_name);
-
-    if (view_flag == YES_VIEW) {
-        char sys_cmd[2 * BASE_STR_LEN] = "";
-        char path[BASE_STR_LEN] = {};
-        _getcwd(path, BASE_STR_LEN);
-        snprintf(sys_cmd, 2 * BASE_STR_LEN, "start \"\" \"%s\\%s\\%s.png\"", path, DIR_NAME, file_name);
-        system(sys_cmd);
-    }
-
-    if (have_err == HAVE_ERROR) {
-        abort();
-    }
-}
-
-int TreeGraphicDump(const struct bin_tree* tree, const char* file_name) {
-    HARD_ASSERT(file_name != NULL, NULL_ERROR);
-
-    if (tree == NULL) {
-        LOGG("NULL_TREE: TREE is NULL\n");
-        return HAVE_ERROR;
-    }
-
-    int have_err = 0;
-
-    LOGG("<table border=\"1\">\n");
-    LOGG("<tr><td>root</td><td>%p</td></tr>\n", tree->root);
-    LOGG("</table>\n");
-
-    if (tree->root == NULL) return have_err;
-    
-    char file_dot[BASE_STR_LEN] = "";
-    sprintf(file_dot, "%s\\%s.dot", DIR_NAME, file_name);
-
-    FILE* dump_out = fopen(file_dot, "w");
-    HARD_VERIFY(dump_out != NULL, CANT_OPEN_FILE);
-
-    fprintf(dump_out, "digraph {\n");
-    fprintf(dump_out, "  rankdir = TB;\n  node[shape = \"Mrecord\", style = filled, fontsize = 12];\n");
-    fprintf(dump_out, "  graph[nodesep = 1];\n"); //splines = ortho, 
-    fprintf(dump_out, "  edge[radius = 5];\n");
-    
-    _TreeBasePart(tree, dump_out, &have_err);
-
-    fprintf(dump_out, "}\n");
-
-    fclose(dump_out);
-
-    char sys_cmd[200] = "";
-    sprintf(sys_cmd, GRAPHVIZ_DOT_PATH " -Tpng %s\\%s.dot -o %s\\%s.png", DIR_NAME, file_name, DIR_NAME, file_name);
-    system(sys_cmd);
-
-    LOGG("<img src=\"%s\\%s.png\">\n", DIR_NAME, file_name);
-    
-    return have_err;
-}
-
-void SetDumpNode(FILE* dump_out, const struct node* node, const char* color, const char* fillcolor) {
-    HARD_ASSERT(dump_out != NULL, NULL_ERROR);
-    HARD_ASSERT(node != NULL, NULL_ERROR);
-    HARD_ASSERT(color != NULL, NULL_ERROR);
-    HARD_ASSERT(fillcolor != NULL, NULL_ERROR);
-
-    //fprintf(dump_out, "  NODE%p[color = \"%s\", fillcolor = \"%s\", label=\"{ node = 0x%p | left = 0x%p | right = 0x%p | parent = 0x%p | val = " PRNODE_FOR_GR " }\"];\n", 
-    //        node, color, fillcolor, node, node->left, node->right, node->parent, node->value);
-    fprintf(dump_out, "  NODE%p[color = \"%s\", fillcolor = \"%s\", label=\"{ " PRNODE_FOR_GR " }\"];\n", 
-            node, color, fillcolor, node->value);
-}
-
-void _TreeBasePart(const struct bin_tree* tree, FILE* dump_out, int* have_err) {
-    HARD_ASSERT(tree != NULL, NULL_ERROR);
-    HARD_ASSERT(dump_out != NULL, NULL_ERROR);
-    HARD_ASSERT(have_err != NULL, NULL_ERROR);
-
-    _DumpSubTree(tree->root, dump_out);
-
-    fprintf(dump_out, "  ROOT[color = \"#c08000\", fillcolor = \"#FFC000\", label=\"ROOT\"];\n");
-    fprintf(dump_out, "  edge[color = \"#c08000\", weight = 5, dir = forward];\n");
-    fprintf(dump_out, "  ROOT->NODE%p;\n", tree->root);
-}
-
-void _DumpSubTree(const struct node* node, FILE* dump_out) {
-    HARD_ASSERT(dump_out != NULL, NULL_ERROR);
-    if (node == NULL) return;
-
-    SetDumpNode(dump_out, node, "#008000", "#C0FFC0");
-    if (node->left != NULL) {
-        fprintf(dump_out, "NODE%p->NODE%p[color = \"#0000b0\", weight = 5, dir = forward, label=\"no\", fontcolor = \"#0000b0\"];\n", node, node->left);
-        _DumpSubTree(node->left, dump_out);
-    }
-
-    if (node->right != NULL) {
-        fprintf(dump_out, "NODE%p->NODE%p[color = \"#ff8000\", weight = 5, dir = forward, label=\"yes\", fontcolor = \"#ff8000\"];\n", node, node->right);
-        _DumpSubTree(node->right, dump_out);
-    }
-
-    // if (node->parent != NULL) {
-    //     fprintf(dump_out, "NODE%p->NODE%p[style=dashed, color = \"#000000\", weight = 0, dir = forward];\n", node, node->parent);
-    // }
-}
-
-
-int CreateDir(const char* dir_name) {
-    HARD_ASSERT(dir_name != NULL, NULL_ERROR);
-
-    if (_mkdir(dir_name) == 0)
-        return 0;
-    
-    if (errno == EEXIST)
-        return 1;
-
-    LOGG("ERROR of make dir\n");
-    return -1;
 }

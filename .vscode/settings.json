@@ -1,9 +1,13 @@
 {
     "C_Cpp.errorSquiggles": "enabled",
     "cSpell.words": [
+        "fontcolor",
+        "fontsize",
         "hres",
         "HRESULT",
+        "nodesep",
         "PRNODE",
+        "rankdir",
         "SCNODE"
     ]
 }
