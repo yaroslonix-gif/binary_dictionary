@@ -113,77 +113,146 @@ void _PrintSubTreePostorder(const struct node* node, FILE* fileout) {
 void SaveTree(const struct bin_tree* tree) {
     TreeDump(tree, "save", NO_VIEW);
 
+    CopyFile(SAVE_FILENAME, SAVE_FILENAME_PREV);
+
     FILE* fileout = fopen(SAVE_FILENAME, "w");
     HARD_VERIFY(fileout != NULL, CANT_OPEN_FILE);
 
     PrintTreePreorder(tree, fileout);
 
-    fclose(fileout);
+    if (fclose(fileout) != 0) {
+        LOGG("WARNING: fclose failed on %s\n", SAVE_FILENAME);
+    }
 }
 
-static void _DownloadTreeBasePart(struct bin_tree* tree, char* ptr_save);
+int CopyFile(const char* from, const char* to) {
+    HARD_ASSERT(from != NULL, NULL_ERROR);
+    HARD_ASSERT(to != NULL, NULL_ERROR);
 
-static inline void _DownloadProcessOpenBracket(struct bin_tree* tree, struct node** now, int* left_empty, char** save, char* end);
+    FILE* in = NULL;
+    FILE* out = NULL;
+    char buf[4096] = {};
+    size_t n = 0;
+    int ok = 1;
 
-static inline void _DownloadProcessCloseBracket(struct node** now, int* left_empty, char** save);
+    in = fopen(from, "rb");
+    if (in == NULL) return 0;
 
-static inline void _DownloadProcessValue(struct node** now, char** save, char* end);
+    out = fopen(to, "wb");
+    if (out == NULL) {
+        fclose(in);
+        return 0;
+    }
+
+    while ((n = fread(buf, 1, sizeof(buf), in)) > 0) {
+        if (fwrite(buf, 1, n, out) != n) {
+            ok = 0;
+            break;
+        }
+    }
+    if (ferror(in))
+        ok = 0;
+
+    if (fclose(out) != 0)
+        ok = 0;
+    
+    if (fclose(in) != 0)
+        ok = 0;
+
+    return ok;
+}
+
+static void _DownloadTreeBasePart(struct bin_tree* tree, char* ptr_save, int* is_ok);
+
+static inline void _DownloadProcessOpenBracket(struct bin_tree* tree, struct node** now, int* left_empty, char** save, char* end, int* is_ok);
+
+static inline void _DownloadProcessCloseBracket(struct node** now, int* left_empty, char** save, int* is_ok);
+
+static inline void _DownloadProcessValue(struct node** now, char** save, char* end, int* is_ok);
 
 void DownloadTree(struct bin_tree* tree, const char* filename) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
     HARD_ASSERT(filename != NULL, NULL_ERROR);
 
+    int opened = 0;
+
+    _DownloadTreeFromFile(tree, filename, &opened);
+    if (opened && tree->root != NULL) return;
+
+    _DownloadTreeFromFile(tree, SAVE_FILENAME_PREV, &opened);
+    if (opened && tree->root != NULL) return;
+
+    LOGG("Both saves unusable, using default tree\n");
+    printf("Both saves unusable, using default tree\n");
+
+    DefaultTree(tree);
+}
+
+void _DownloadTreeFromFile(struct bin_tree* tree, const char* filename, int* opened) {
+    HARD_ASSERT(tree != NULL, NULL_ERROR);
+    HARD_ASSERT(filename != NULL, NULL_ERROR);
+    HARD_ASSERT(opened != NULL, NULL_ERROR);
+
+    *opened = 0;
+
     FILE* source = fopen(filename, "r");
     if (source == NULL) {
-        LOGG("CAN'T OPEN FILE\n");
-        printf("cant't download save\n");
-
-        DefaultTree(tree);
+        LOGG("Can't open %s\n", filename);
         return;
     }
-    
+    *opened = 1;
+
     char* ptr_save = read_line(source);
+    fclose(source);
     if (ptr_save == NULL) {
-        DefaultTree(tree);
-        fclose(source);
+        LOGG("%s: empty\n", filename);
         return;
     }
 
     tree->save_str.str = ptr_save;
     tree->save_str.len = strlen(ptr_save);
 
-    _DownloadTreeBasePart(tree, ptr_save);
+    int is_ok = 1;
+    _DownloadTreeBasePart(tree, ptr_save, &is_ok);
 
-    if (tree->root == NULL) {
-        DefaultTree(tree);
+    if (is_ok == 0 || tree->root == NULL) {
+        LOGG("%s: parse failed\n", filename);
+        DestroyTree(tree);
+        InitTree(tree);
+        return;
     }
-
-    fclose(source);
 }
 
-static void _DownloadTreeBasePart(struct bin_tree* tree, char* ptr_save) {
+static void _DownloadTreeBasePart(struct bin_tree* tree, char* ptr_save, int* is_ok) {
+    HARD_ASSERT(tree != NULL, NULL_ERROR);
+    HARD_ASSERT(ptr_save != NULL, NULL_ERROR);
+    HARD_ASSERT(is_ok != NULL, NULL_ERROR);
+
     char* save = ptr_save;
     struct node* now = NULL;
     char* end = ptr_save + tree->save_str.len;
     int left_empty = 0;
 
-    while (save < end) {
+    while (save < end && *is_ok) {
         if (save[0] == '(') {
-            _DownloadProcessOpenBracket(tree, &now, &left_empty, &save, end);
+            _DownloadProcessOpenBracket(tree, &now, &left_empty, &save, end, is_ok);
             continue;
         }
 
         if (save[0] == ')') {
-            _DownloadProcessCloseBracket(&now, &left_empty, &save);
+            _DownloadProcessCloseBracket(&now, &left_empty, &save, is_ok);
 
             continue;
         }
 
-        _DownloadProcessValue(&now, &save, end);
+        _DownloadProcessValue(&now, &save, end, is_ok);
     }
 }
 
-static inline void _DownloadProcessOpenBracket(struct bin_tree* tree, struct node** now, int* left_empty, char** save, char* end) {
+static inline void _DownloadProcessOpenBracket(struct bin_tree* tree, struct node** now, int* left_empty, char** save, char* end, int* is_ok) {
+    HARD_ASSERT(is_ok != NULL, NULL_ERROR);
+    if (!*is_ok) return;
+    
     if ((*save) + 1 < end && (*save)[1] == ')') {
         if ((*now) != NULL) {
             if ((*now)->left == NULL && !(*left_empty)) {
@@ -201,7 +270,12 @@ static inline void _DownloadProcessOpenBracket(struct bin_tree* tree, struct nod
         (*now)->parent = NULL;
 
     } else {
-        HARD_VERIFY((*now) != NULL, NULL_ERROR);
+        if ((*now) == NULL) {
+            LOGG("WRONG save format: node is NULL on open bracket\n");
+            *is_ok = 0;
+            return;
+        }
+
         struct node* new_node = (struct node*)calloc(1, sizeof(struct node));
         HARD_VERIFY(new_node != NULL, NULL_ERROR);
 
@@ -211,7 +285,9 @@ static inline void _DownloadProcessOpenBracket(struct bin_tree* tree, struct nod
             (*now)->right = new_node;
         } else {
             LOGG("WRONG save format: node already has two children\n");
-            abort();
+            free(new_node);
+            *is_ok = 0;
+            return;
         }
 
         new_node->parent = (*now);
@@ -222,26 +298,35 @@ static inline void _DownloadProcessOpenBracket(struct bin_tree* tree, struct nod
     (*save) += 1;
 }
 
-static inline void _DownloadProcessCloseBracket(struct node** now, int* left_empty, char** save) {
+static inline void _DownloadProcessCloseBracket(struct node** now, int* left_empty, char** save, int* is_ok) {
+    HARD_ASSERT(is_ok != NULL, NULL_ERROR);
+    if (!*is_ok) return;
+    
     if (*now == NULL) {
         LOGG("WRONG save format: unmatched ')'\n");
-        abort();
+        *is_ok = 0;
+        return;
     }
     *left_empty = ((*now)->parent != NULL && (*now)->parent->left == *now);
     *now = (*now)->parent;
     *save += 1;
 }
 
-static inline void _DownloadProcessValue(struct node** now, char** save, char* end) {
+static inline void _DownloadProcessValue(struct node** now, char** save, char* end, int* is_ok) {
+    HARD_ASSERT(is_ok != NULL, NULL_ERROR);
+    if (!*is_ok) return;
+
     char* close = memchr(*save, '>', (size_t)(end - *save));
     if (close == NULL) {
         LOGG("WRONG save format: missing '>'\n");
-        abort();
+        *is_ok = 0;
+        return;
     }
 
     if (*now == NULL || (*now)->value != NULL) {
         LOGG("WRONG save format: unexpected value\n");
-        abort();
+        *is_ok = 0;
+        return;
     }
 
     (*now)->value = *save + 1;

@@ -174,8 +174,9 @@ char* read_line(FILE* source) {
     for (char ch = '\0'; (ch = fgetc(source)) != '\n'; now_num_ch++) {
         if (feof(source)) {
             if (now_num_ch != 0)
-                return buf;
+                break;
             
+            free(buf);
             return NULL;
         }
         if (now_num_ch == buf_sz) {

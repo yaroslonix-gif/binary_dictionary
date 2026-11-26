@@ -3,12 +3,12 @@
 #include "base.h"
 #include "tree.h"
 
-#define VIEW_MODE 'v'
-#define FIND_MODE 'f'
-#define ADD_MODE  'a'
-#define DEFINITION_MODE   'd'
-#define COMPARE_MODE  'c'
-#define EXIT_MODE 'e'
+#define VIEW_MODE 'p'
+#define FIND_MODE 'i'
+#define ADD_MODE  'd'
+#define DEFINITION_MODE   'o'
+#define COMPARE_MODE  's'
+#define EXIT_MODE 'v'
 
 /////////////////////////////////////////////////////////// ПРОТОТИПЫ ФУНКЦИЙ ///////////////////////////////////////////////////////////
 

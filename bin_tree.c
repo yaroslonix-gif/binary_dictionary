@@ -7,7 +7,7 @@ int main() {
     LOGG("<pre>\n");
     LOGG("<head><style>table {border-collapse: collapse;background-color: #e6f2ff;font-family: Arial, sans-serif;} th, td {border: 1px solid #b3d7ff;padding: 12px; text-align: center;}th {background-color: #cbdff7; font-weight: bold;}</style></head>\n");
     if (CreateDir(DIR_NAME) == -1) {
-        abort();
+        return 0;
     }
 
     struct bin_tree tree = {};
@@ -31,8 +31,8 @@ int main() {
 void RunBinDirectory(struct bin_tree* tree) {
     HARD_ASSERT(tree != NULL, NULL_ERROR);
 
-    while(1) {
-        SPEAK_AND_PRINT_BASE("Vyberite komandu: [v]prosmotr, [f]poisk, [a]dobavit, [d]opredelit, [c]sravnit ili [e]vyhod\n");
+    while (1) {
+        SPEAK_AND_PRINT_BASE("Vyberite komandu: [p]prosmotr, [i]igrat, [d]dobavit, [o]opredelit, [s]sravnit ili [v]vyhod\n");
 
         switch (WaitCommand()) {
         case VIEW_MODE:
@@ -263,6 +263,7 @@ static void _AddObjInTreeOrganizeNodes(struct node* old_obj, char* new_obj_name,
     HARD_ASSERT(old_obj != NULL, NULL_ERROR);
     HARD_ASSERT(new_obj_name != NULL, NULL_ERROR);
     HARD_ASSERT(str_obj_ch != NULL, NULL_ERROR);
+    HARD_ASSERT(old_obj->left == NULL && old_obj->right == NULL, "not a leaf");
 
     struct node* ch_node = old_obj;
     struct node* wrong_node = (struct node*)calloc(1, sizeof(struct node));

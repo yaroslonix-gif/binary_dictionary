@@ -6,12 +6,14 @@ typedef char* node_elem_t;
 #define PRNODE "<%s>"
 #define PRNODE_FOR_GR "\\<%s\\>"
 #define SCNODE "<%s>"
+
 #define HAVE_ERROR 1
 #define NO_VIEW 0
 #define YES_VIEW 1
 #define BASE_STR_LEN 200
 
-#define SAVE_FILENAME "treesave.txt"
+#define SAVE_FILENAME       "treesave.txt"
+#define SAVE_FILENAME_PREV  "treesave_prev.txt"
 #define GRAPHVIZ_DOT_PATH "\"C:\\Program Files\\Graphviz\\bin\\dot.exe\""
 
 extern const char DIR_NAME[];
@@ -54,7 +56,11 @@ void _PrintSubTreePostorder(const struct node* node, FILE* fileout);
 
 void SaveTree(const struct bin_tree* tree);
 
+int CopyFile(const char* from, const char* to);
+
 void DownloadTree(struct bin_tree* tree, const char* filename);
+
+void _DownloadTreeFromFile(struct bin_tree* tree, const char* filename, int* opened);
 
 
 //================================= DUMP =================================//
